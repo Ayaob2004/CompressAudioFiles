@@ -1,0 +1,24 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace CompressAudioFiles.Models
+{
+    class CompressionSettings
+    {
+        public string AlgorithmName { get; set; }
+        public int SampleRate { get; set; }
+        public int QuantizationLevels { get; set; }
+        public int BitRate { get; set; }
+
+        public CompressionSettings()
+        {
+            AlgorithmName = CompressionAlgorithms.AdaptiveDeltaModulation;
+            SampleRate = 44100;
+            QuantizationLevels = 2;
+            BitRate = 1;
+        }
+    }
+}
