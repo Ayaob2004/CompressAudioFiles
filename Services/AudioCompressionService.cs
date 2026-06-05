@@ -13,6 +13,7 @@ namespace CompressAudioFiles.Services
 {
     class AudioCompressionService
     {
+        // التابع العام
         public CompressionResult CompressAudio(string inputPath, CompressionSettings settings)
         {
             if (settings == null)
@@ -40,6 +41,7 @@ namespace CompressAudioFiles.Services
             }
         }
 
+        ///Aya///
         public CompressionResult CompressUsingAdaptiveDeltaModulation(string inputPath, CompressionSettings settings)
         {
             if (string.IsNullOrWhiteSpace(inputPath))
@@ -245,7 +247,6 @@ namespace CompressAudioFiles.Services
         }
 
         /////////////////////////////////////////////////////FARAH RAM/////////////////////////////////////////////////////////
-
         public CompressionResult CompressUsingDeltaModulation(string inputPath, CompressionSettings settings)
         {
             Stopwatch sw = Stopwatch.StartNew();
