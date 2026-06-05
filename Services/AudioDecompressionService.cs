@@ -11,128 +11,29 @@ namespace CompressAudioFiles.Services
 {
     class AudioDecompressionService
     {
-        public string DecompressAudio(string compressedFilePath, string algorithmName)
+        public string DecompressDeltaModulation(string compressedFilePath)
         {
-            if (string.IsNullOrWhiteSpace(compressedFilePath))
-                throw new ArgumentException("Compressed file path is empty.");
+            List<short> samples = new List<short>();
 
-            if (!File.Exists(compressedFilePath))
-                throw new FileNotFoundException("Compressed file not found.", compressedFilePath);
-
-            if (string.IsNullOrWhiteSpace(algorithmName))
-                throw new ArgumentException("Algorithm name is required.");
-
-            switch (algorithmName)
+            using (BinaryReader reader = new BinaryReader(File.Open(compressedFilePath, FileMode.Open)))
             {
-                case CompressionAlgorithms.AdaptiveDeltaModulation:
-                    return DecompressAdaptiveDeltaModulation(compressedFilePath);
+                short predicted = reader.ReadInt16();
+                int step = reader.ReadInt32();
+                int bitCount = reader.ReadInt32();
 
-                case CompressionAlgorithms.NonlinearQuantization:
-                case CompressionAlgorithms.DPCM:
-                case CompressionAlgorithms.PredictiveDifferentialCoding:
-                case CompressionAlgorithms.DeltaModulation:
-                    throw new NotSupportedException(
-                        "This decompression algorithm is listed in the project plan, but it is not implemented in this section yet."
-                    );
+                samples.Add(predicted);
 
-                default:
-                    throw new NotSupportedException("Unknown decompression algorithm.");
-            }
-        }
-
-        public string DecompressAdaptiveDeltaModulation(string compressedFilePath)
-        {
-            string outputPath = GenerateDecompressedFilePath(compressedFilePath);
-
-            using (var reader = new BinaryReader(File.OpenRead(compressedFilePath)))
-            {
-                AdmHeader header = ReadHeader(reader);
-
-                WaveFormat outputFormat = new WaveFormat(
-                    header.SampleRate,
-                    16,
-                    header.Channels
-                );
-
-                using (var waveWriter = new WaveFileWriter(outputPath, outputFormat))
+                for (int i = 0; i < bitCount; i++)
                 {
-                    int predictedSample = 0;
-                    int stepSize = header.InitialStep;
-                    int previousBit = -1;
+                    bool bit = reader.ReadBoolean();
 
-                    int currentByte = 0;
-                    int bitsRemaining = 0;
+                    if (bit)
+                        predicted += (short)step;
+                    else
+                        predicted -= (short)step;
 
-                    for (long i = 0; i < header.TotalSamples; i++)
-                    {
-                        int bit = ReadBit(reader, ref currentByte, ref bitsRemaining);
-
-                        if (bit == 1)
-                        {
-                            predictedSample += stepSize;
-                        }
-                        else
-                        {
-                            predictedSample -= stepSize;
-                        }
-
-                        predictedSample = Clamp(
-                            predictedSample,
-                            short.MinValue,
-                            short.MaxValue
-                        );
-
-                        if (previousBit == bit)
-                        {
-                            stepSize = (int)(stepSize * header.IncreaseFactor);
-                        }
-                        else
-                        {
-                            stepSize = (int)(stepSize * header.DecreaseFactor);
-                        }
-
-                        stepSize = Clamp(stepSize, header.MinStep, header.MaxStep);
-
-                        WritePcm16Sample(waveWriter, (short)predictedSample);
-
-                        previousBit = bit;
-                    }
+                    samples.Add(predicted);
                 }
-            }
-
-            return outputPath;
-        }
-
-        private AdmHeader ReadHeader(BinaryReader reader)
-        {
-            string magic = reader.ReadString();
-
-            if (magic != "ADM1")
-                throw new InvalidDataException("Invalid ADM compressed file.");
-
-            AdmHeader header = new AdmHeader();
-
-            header.SampleRate = reader.ReadInt32();
-            header.Channels = reader.ReadInt32();
-            header.BitsPerSample = reader.ReadInt32();
-            header.InitialStep = reader.ReadInt32();
-            header.MinStep = reader.ReadInt32();
-            header.MaxStep = reader.ReadInt32();
-            header.IncreaseFactor = reader.ReadDouble();
-            header.DecreaseFactor = reader.ReadDouble();
-            header.TotalSamples = reader.ReadInt64();
-
-            if (header.SampleRate <= 0)
-                throw new InvalidDataException("Invalid sample rate in ADM file.");
-
-            if (header.Channels <= 0)
-                throw new InvalidDataException("Invalid channels count in ADM file.");
-
-            if (header.TotalSamples <= 0)
-                throw new InvalidDataException("Invalid samples count in ADM file.");
-
-            return header;
-        }
 
         private int ReadBit(BinaryReader reader, ref int currentByte, ref int bitsRemaining)
         {
@@ -142,29 +43,22 @@ namespace CompressAudioFiles.Services
                 bitsRemaining = 8;
             }
 
-            int bit = currentByte & 1;
-
-            currentByte >>= 1;
-            bitsRemaining--;
-
-            return bit;
-        }
-
-        private void WritePcm16Sample(WaveFileWriter writer, short sample)
-        {
-            byte[] bytes = BitConverter.GetBytes(sample);
-            writer.Write(bytes, 0, bytes.Length);
-        }
-
-        private string GenerateDecompressedFilePath(string compressedFilePath)
-        {
             string directory = Path.GetDirectoryName(compressedFilePath);
-            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(compressedFilePath);
+            string fileNameWithoutExt = Path.GetFileNameWithoutExtension(compressedFilePath);
 
-            string outputFileName = fileNameWithoutExtension + "_decompressed.wav";
+            string outputWavPath = Path.Combine(
+                directory,
+                fileNameWithoutExt + "_Decom_Delta.wav"
+            );
 
-            return Path.Combine(directory, outputFileName);
-        }
+            WaveFormat format = new WaveFormat(44100, 16, 1);
+
+            using (WaveFileWriter writer = new WaveFileWriter(outputWavPath, format))
+            {
+                foreach (short sample in samples)
+                {
+                    writer.WriteSample(sample / 32768f);
+                }
 
         private int Clamp(int value, int min, int max)
         {
@@ -175,19 +69,9 @@ namespace CompressAudioFiles.Services
                 return max;
 
             return value;
-        }
+            }
 
-        private class AdmHeader
-        {
-            public int SampleRate { get; set; }
-            public int Channels { get; set; }
-            public int BitsPerSample { get; set; }
-            public int InitialStep { get; set; }
-            public int MinStep { get; set; }
-            public int MaxStep { get; set; }
-            public double IncreaseFactor { get; set; }
-            public double DecreaseFactor { get; set; }
-            public long TotalSamples { get; set; }
+            return outputWavPath;
         }
     }
 }

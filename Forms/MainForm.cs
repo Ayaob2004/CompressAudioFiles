@@ -33,6 +33,10 @@ namespace CompressAudioFiles
             audioDecompressionService = new AudioDecompressionService();
             InitializeCompressionAlgorithms();
 
+            this.AllowDrop = true;
+            this.DragEnter += MainForm_DragEnter;
+            this.DragDrop += MainForm_DragDrop;
+
         }
 
         private void LoadAudioFile(string filePath)
@@ -211,6 +215,8 @@ namespace CompressAudioFiles
             {
                 btnDecompress.Enabled = false;
                 btnDecompress.Text = "Decompressing...";
+        private void lblFilePath_Click(object sender, EventArgs e)
+        {
 
                 decompressedFilePath = audioDecompressionService.DecompressAudio(
                     lastCompressionResult.CompressedFilePath,
@@ -239,6 +245,22 @@ namespace CompressAudioFiles
             {
                 btnDecompress.Enabled = true;
                 btnDecompress.Text = "Decompress";
+            }
+        }
+    }
+        }
+        private void MainForm_DragEnter(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+                e.Effect = DragDropEffects.Copy;
+        }
+        private void MainForm_DragDrop(object sender, DragEventArgs e)
+        {
+            string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+
+            if (files.Length > 0)
+            {
+                LoadAudioFile(files[0]);
             }
         }
     }
