@@ -199,7 +199,7 @@ namespace CompressAudioFiles
         private void btnDecompress_Click(object sender, EventArgs e)
         {
             if (lastCompressionResult == null ||
-        string.IsNullOrWhiteSpace(lastCompressionResult.CompressedFilePath))
+                string.IsNullOrWhiteSpace(lastCompressionResult.CompressedFilePath))
             {
                 MessageBox.Show(
                     "Please compress an audio file first.",
@@ -215,8 +215,6 @@ namespace CompressAudioFiles
             {
                 btnDecompress.Enabled = false;
                 btnDecompress.Text = "Decompressing...";
-        private void lblFilePath_Click(object sender, EventArgs e)
-        {
 
                 decompressedFilePath = audioDecompressionService.DecompressAudio(
                     lastCompressionResult.CompressedFilePath,
@@ -247,13 +245,18 @@ namespace CompressAudioFiles
                 btnDecompress.Text = "Decompress";
             }
         }
-    }
+
+        private void lblFilePath_Click(object sender, EventArgs e)
+        {
+            // إذا ما بدك تعمل شيء عند الضغط على lblFilePath اتركه فارغ
         }
+
         private void MainForm_DragEnter(object sender, DragEventArgs e)
         {
             if (e.Data.GetDataPresent(DataFormats.FileDrop))
                 e.Effect = DragDropEffects.Copy;
         }
+
         private void MainForm_DragDrop(object sender, DragEventArgs e)
         {
             string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
