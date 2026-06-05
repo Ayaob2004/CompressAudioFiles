@@ -19,8 +19,10 @@ namespace CompressAudioFiles
         private AudioMetadata currentAudioMetadata;
         private CompressionSettings currentCompressionSettings;
         private CompressionResult lastCompressionResult;
+        private string decompressedFilePath;
         private readonly AudioMetadataService audioMetadataService;
         private readonly AudioCompressionService audioCompressionService;
+        private readonly AudioDecompressionService audioDecompressionService;
 
         public MainForm()
         {
@@ -28,6 +30,7 @@ namespace CompressAudioFiles
             audioMetadataService = new AudioMetadataService();
             audioCompressionService = new AudioCompressionService();
             currentCompressionSettings = new CompressionSettings();
+            audioDecompressionService = new AudioDecompressionService();
             InitializeCompressionAlgorithms();
 
         }
@@ -189,6 +192,54 @@ namespace CompressAudioFiles
             }
         }
 
+        private void btnDecompress_Click(object sender, EventArgs e)
+        {
+            if (lastCompressionResult == null ||
+        string.IsNullOrWhiteSpace(lastCompressionResult.CompressedFilePath))
+            {
+                MessageBox.Show(
+                    "Please compress an audio file first.",
+                    "No Compressed File",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning
+                );
 
+                return;
+            }
+
+            try
+            {
+                btnDecompress.Enabled = false;
+                btnDecompress.Text = "Decompressing...";
+
+                decompressedFilePath = audioDecompressionService.DecompressAudio(
+                    lastCompressionResult.CompressedFilePath,
+                    lastCompressionResult.AlgorithmName
+                );
+
+                lblDecompressedPath.Text = "Decompressed File: " + decompressedFilePath;
+
+                MessageBox.Show(
+                    "Audio decompressed successfully.",
+                    "Success",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information
+                );
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "Decompression failed.\n" + ex.Message,
+                    "Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error
+                );
+            }
+            finally
+            {
+                btnDecompress.Enabled = true;
+                btnDecompress.Text = "Decompress";
+            }
+        }
     }
 }

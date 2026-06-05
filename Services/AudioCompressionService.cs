@@ -214,11 +214,7 @@ namespace CompressAudioFiles.Services
             return (short)(sample * short.MaxValue);
         }
 
-        private void PackBit(
-            ref byte currentByte,
-            ref int bitPosition,
-            int bit,
-            BinaryWriter writer)
+        private void PackBit(ref byte currentByte, ref int bitPosition, int bit, BinaryWriter writer)
         {
             if (bit == 1)
             {
