@@ -23,7 +23,7 @@ namespace CompressAudioFiles.Models
             SampleRate = 44100;
             QuantizationLevels = 2;
             BitRate = 1;
-            DeltaStep = 200;
+            DeltaStep = 1000;
         }
 
 
