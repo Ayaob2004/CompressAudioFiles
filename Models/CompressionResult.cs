@@ -15,5 +15,12 @@ namespace CompressAudioFiles.Models
         public TimeSpan CompressionTime { get; set; }
         public string AlgorithmName { get; set; }
         public CompressionSettings UsedSettings { get; set; }
+
+        /////FARAH RAM/////
+        public int TotalSamples { get; set; }
+        public int TotalBits { get; set; }
+        public string StatusMessage { get; set; }
+
+
     }
 }

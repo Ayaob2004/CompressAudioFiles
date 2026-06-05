@@ -12,6 +12,10 @@ namespace CompressAudioFiles.Models
         public int SampleRate { get; set; }
         public int QuantizationLevels { get; set; }
         public int BitRate { get; set; }
+        //FARAH RAM
+        public int DeltaStep { get; set; } 
+
+
 
         public CompressionSettings()
         {
@@ -19,6 +23,13 @@ namespace CompressAudioFiles.Models
             SampleRate = 44100;
             QuantizationLevels = 2;
             BitRate = 1;
+            DeltaStep = 200;
         }
+
+
+
+
+
+
     }
 }

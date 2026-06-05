@@ -8,6 +8,7 @@ using System.IO;
 using NAudio.Wave;
 using CompressAudioFiles.Models;
 
+
 namespace CompressAudioFiles.Services
 {
     class AudioCompressionService
@@ -24,11 +25,12 @@ namespace CompressAudioFiles.Services
             {
                 case CompressionAlgorithms.AdaptiveDeltaModulation:
                     return CompressUsingAdaptiveDeltaModulation(inputPath, settings);
-
+                case CompressionAlgorithms.DeltaModulation:
+                    return CompressUsingDeltaModulation(inputPath, settings);
                 case CompressionAlgorithms.NonlinearQuantization:
                 case CompressionAlgorithms.DPCM:
                 case CompressionAlgorithms.PredictiveDifferentialCoding:
-                case CompressionAlgorithms.DeltaModulation:
+                
                     throw new NotSupportedException(
                         "This algorithm is listed in the project plan, but it is not implemented in this section yet."
                     );
@@ -245,5 +247,163 @@ namespace CompressAudioFiles.Services
 
             return value;
         }
+
+        /////////////////////////////////////////////////////FARAH RAM/////////////////////////////////////////////////////////
+
+        public CompressionResult CompressUsingDeltaModulation(string inputPath, CompressionSettings settings)
+        {
+            Stopwatch sw = Stopwatch.StartNew();
+
+            short[] samples = ReadSamples(inputPath);
+
+            if (samples == null || samples.Length == 0)
+            {
+                return new CompressionResult
+                {
+                    StatusMessage = "File is empty",
+                    AlgorithmName = "Delta Modulation"
+                };
+            }
+
+            List<bool> bits = new List<bool>();
+
+            short predicted = samples[0];
+            int step = settings.DeltaStep;
+
+            for (int i = 1; i < samples.Length; i++)
+            {
+                if (samples[i] >= predicted)
+                {
+                    bits.Add(true);
+                    predicted += (short)step;
+                }
+                else
+                {
+                    bits.Add(false);
+                    predicted -= (short)step;
+                }
+            }
+
+            sw.Stop();
+
+            string outputPath = Path.ChangeExtension(inputPath, ".dm");
+
+            using (BinaryWriter writer = new BinaryWriter(File.Open(outputPath, FileMode.Create)))
+            {
+                writer.Write(samples[0]);          // First sample
+                writer.Write(step);               // Delta step
+                writer.Write(bits.Count);         // Number of bits
+
+                foreach (bool bit in bits)
+                {
+                    writer.Write(bit);            // 1 bit (bool)
+                }
+            }
+
+
+            long originalSize = new FileInfo(inputPath).Length;
+            long compressedSize = new FileInfo(outputPath).Length;
+
+            double ratio = (double)compressedSize / originalSize * 100;
+
+            return new CompressionResult
+            {
+                CompressedFilePath = outputPath,
+                OriginalFileSize = originalSize,
+                CompressedFileSize = compressedSize,
+                CompressionRatio = ratio,
+                CompressionTime = sw.Elapsed,
+                AlgorithmName = "Delta Modulation",
+                UsedSettings = settings,
+                TotalSamples = samples.Length,
+                TotalBits = bits.Count,
+                StatusMessage = "Compression completed successfully"
+            };
+        }
+        
+
+
+
+        private short[] ReadSamples(string filePath)
+            {
+                List<short> samples = new List<short>();
+
+                using (var reader = new AudioFileReader(filePath))
+                {
+                    float[] buffer = new float[1024];
+                    int samplesRead;
+
+                    int channels = reader.WaveFormat.Channels;
+
+                    while ((samplesRead = reader.Read(buffer, 0, buffer.Length)) > 0)
+                    {
+                        for (int i = 0; i < samplesRead; i += channels)
+                        {
+                            float sampleF = buffer[i]; 
+
+                            short sample = (short)(sampleF * 32767f);
+
+                            samples.Add(sample);
+                        }
+                    }
+                }
+
+                return samples.ToArray();
+            }
+
+
+
+        public string DecompressAndSaveWav(string dmFilePath)
+        {
+            List<short> samples = new List<short>();
+
+            using (BinaryReader reader = new BinaryReader(File.Open(dmFilePath, FileMode.Open)))
+            {
+                short predicted = reader.ReadInt16();
+                int step = reader.ReadInt32();
+                int bitCount = reader.ReadInt32();
+
+                samples.Add(predicted);
+
+                for (int i = 0; i < bitCount; i++)
+                {
+                    bool bit = reader.ReadBoolean();
+
+                    if (bit)
+                        predicted += (short)step;
+                    else
+                        predicted -= (short)step;
+
+                    samples.Add(predicted);
+                }
+            }
+
+            string directory = Path.GetDirectoryName(dmFilePath);
+            string fileNameWithoutExt = Path.GetFileNameWithoutExtension(dmFilePath);
+
+            string outputWavPath = Path.Combine(
+                directory,
+                fileNameWithoutExt + "_new.wav"
+            );
+
+            WaveFormat format = new WaveFormat(44100, 16, 1);
+
+            using (WaveFileWriter writer = new WaveFileWriter(outputWavPath, format))
+            {
+                foreach (short sample in samples)
+                {
+                    writer.WriteSample(sample / 32768f);
+                }
+            }
+
+            return outputWavPath;
+        }
+
+
+
+
+
     }
+
+
 }
