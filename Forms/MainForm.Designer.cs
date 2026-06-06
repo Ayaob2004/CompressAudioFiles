@@ -29,6 +29,12 @@ namespace CompressAudioFiles
         /// </summary>
         private void InitializeComponent()
         {
+            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea1 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
+            System.Windows.Forms.DataVisualization.Charting.Legend legend1 = new System.Windows.Forms.DataVisualization.Charting.Legend();
+            System.Windows.Forms.DataVisualization.Charting.Series series1 = new System.Windows.Forms.DataVisualization.Charting.Series();
+            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea2 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
+            System.Windows.Forms.DataVisualization.Charting.Legend legend2 = new System.Windows.Forms.DataVisualization.Charting.Legend();
+            System.Windows.Forms.DataVisualization.Charting.Series series2 = new System.Windows.Forms.DataVisualization.Charting.Series();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.btnChooseAudio = new System.Windows.Forms.Button();
             this.lblFilePath = new System.Windows.Forms.Label();
@@ -54,6 +60,14 @@ namespace CompressAudioFiles
             this.lblDecompressedPath = new System.Windows.Forms.Label();
             this.btnDecompress = new System.Windows.Forms.Button();
             this.lblConvertedPath = new System.Windows.Forms.Label();
+            this.progressBarCompression = new System.Windows.Forms.ProgressBar();
+            this.chartCompressionRatio = new System.Windows.Forms.DataVisualization.Charting.Chart();
+            this.chartProcessingSpeed = new System.Windows.Forms.DataVisualization.Charting.Chart();
+            this.lblChartCompressionRatio = new System.Windows.Forms.Label();
+            this.lblChartProcessingSpeed = new System.Windows.Forms.Label();
+            this.lblProgress = new System.Windows.Forms.Label();
+            ((System.ComponentModel.ISupportInitialize)(this.chartCompressionRatio)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.chartProcessingSpeed)).BeginInit();
             this.SuspendLayout();
             // 
             // btnChooseAudio
@@ -248,7 +262,7 @@ namespace CompressAudioFiles
             this.btnPlay.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(24)))), ((int)(((byte)(95)))), ((int)(((byte)(165)))));
             this.btnPlay.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(24)))), ((int)(((byte)(95)))), ((int)(((byte)(165)))));
             this.btnPlay.ForeColor = System.Drawing.Color.White;
-            this.btnPlay.Location = new System.Drawing.Point(427, 458);
+            this.btnPlay.Location = new System.Drawing.Point(749, 799);
             this.btnPlay.Margin = new System.Windows.Forms.Padding(4);
             this.btnPlay.Name = "btnPlay";
             this.btnPlay.Size = new System.Drawing.Size(64, 59);
@@ -263,7 +277,7 @@ namespace CompressAudioFiles
             this.btnstop.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(51)))), ((int)(((byte)(51)))), ((int)(((byte)(51)))));
             this.btnstop.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnstop.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(170)))), ((int)(((byte)(170)))), ((int)(((byte)(170)))));
-            this.btnstop.Location = new System.Drawing.Point(366, 463);
+            this.btnstop.Location = new System.Drawing.Point(688, 804);
             this.btnstop.Margin = new System.Windows.Forms.Padding(4);
             this.btnstop.Name = "btnstop";
             this.btnstop.Size = new System.Drawing.Size(53, 49);
@@ -277,7 +291,7 @@ namespace CompressAudioFiles
             this.lblCurrentTime.AutoSize = true;
             this.lblCurrentTime.Font = new System.Drawing.Font("Segoe UI", 9F);
             this.lblCurrentTime.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(55)))), ((int)(((byte)(138)))), ((int)(((byte)(221)))));
-            this.lblCurrentTime.Location = new System.Drawing.Point(132, 518);
+            this.lblCurrentTime.Location = new System.Drawing.Point(454, 859);
             this.lblCurrentTime.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblCurrentTime.Name = "lblCurrentTime";
             this.lblCurrentTime.Size = new System.Drawing.Size(44, 20);
@@ -289,7 +303,7 @@ namespace CompressAudioFiles
             this.lblTotalTime.AutoSize = true;
             this.lblTotalTime.Font = new System.Drawing.Font("Segoe UI Light", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblTotalTime.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(85)))), ((int)(((byte)(85)))), ((int)(((byte)(85)))));
-            this.lblTotalTime.Location = new System.Drawing.Point(728, 516);
+            this.lblTotalTime.Location = new System.Drawing.Point(1050, 857);
             this.lblTotalTime.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblTotalTime.Name = "lblTotalTime";
             this.lblTotalTime.Size = new System.Drawing.Size(44, 20);
@@ -299,7 +313,7 @@ namespace CompressAudioFiles
             // pnlProgressTrack
             // 
             this.pnlProgressTrack.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(42)))), ((int)(((byte)(42)))), ((int)(((byte)(69)))));
-            this.pnlProgressTrack.Location = new System.Drawing.Point(187, 524);
+            this.pnlProgressTrack.Location = new System.Drawing.Point(509, 865);
             this.pnlProgressTrack.Margin = new System.Windows.Forms.Padding(4);
             this.pnlProgressTrack.Name = "pnlProgressTrack";
             this.pnlProgressTrack.Size = new System.Drawing.Size(533, 7);
@@ -322,7 +336,7 @@ namespace CompressAudioFiles
             this.btnDecompress.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(24)))), ((int)(((byte)(95)))), ((int)(((byte)(165)))));
             this.btnDecompress.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnDecompress.ForeColor = System.Drawing.Color.White;
-            this.btnDecompress.Location = new System.Drawing.Point(1175, 14);
+            this.btnDecompress.Location = new System.Drawing.Point(1096, 14);
             this.btnDecompress.Margin = new System.Windows.Forms.Padding(4);
             this.btnDecompress.Name = "btnDecompress";
             this.btnDecompress.Size = new System.Drawing.Size(126, 44);
@@ -341,6 +355,78 @@ namespace CompressAudioFiles
             this.lblConvertedPath.TabIndex = 19;
             this.lblConvertedPath.Text = "ConvertedPath";
             // 
+            // progressBarCompression
+            // 
+            this.progressBarCompression.Location = new System.Drawing.Point(1229, 25);
+            this.progressBarCompression.Name = "progressBarCompression";
+            this.progressBarCompression.Size = new System.Drawing.Size(125, 23);
+            this.progressBarCompression.TabIndex = 20;
+            // 
+            // chartCompressionRatio
+            // 
+            chartArea1.Name = "ChartArea1";
+            this.chartCompressionRatio.ChartAreas.Add(chartArea1);
+            legend1.Name = "Legend1";
+            this.chartCompressionRatio.Legends.Add(legend1);
+            this.chartCompressionRatio.Location = new System.Drawing.Point(735, 330);
+            this.chartCompressionRatio.Name = "chartCompressionRatio";
+            series1.ChartArea = "ChartArea1";
+            series1.Legend = "Legend1";
+            series1.Name = "Series1";
+            this.chartCompressionRatio.Series.Add(series1);
+            this.chartCompressionRatio.Size = new System.Drawing.Size(378, 300);
+            this.chartCompressionRatio.TabIndex = 21;
+            this.chartCompressionRatio.Text = "chart1";
+            // 
+            // chartProcessingSpeed
+            // 
+            chartArea2.Name = "ChartArea1";
+            this.chartProcessingSpeed.ChartAreas.Add(chartArea2);
+            legend2.Name = "Legend1";
+            this.chartProcessingSpeed.Legends.Add(legend2);
+            this.chartProcessingSpeed.Location = new System.Drawing.Point(1119, 330);
+            this.chartProcessingSpeed.Name = "chartProcessingSpeed";
+            series2.ChartArea = "ChartArea1";
+            series2.Legend = "Legend1";
+            series2.Name = "Series1";
+            this.chartProcessingSpeed.Series.Add(series2);
+            this.chartProcessingSpeed.Size = new System.Drawing.Size(378, 300);
+            this.chartProcessingSpeed.TabIndex = 22;
+            this.chartProcessingSpeed.Text = "chart2";
+            // 
+            // lblChartCompressionRatio
+            // 
+            this.lblChartCompressionRatio.AutoSize = true;
+            this.lblChartCompressionRatio.ForeColor = System.Drawing.Color.White;
+            this.lblChartCompressionRatio.Location = new System.Drawing.Point(915, 650);
+            this.lblChartCompressionRatio.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblChartCompressionRatio.Name = "lblChartCompressionRatio";
+            this.lblChartCompressionRatio.Size = new System.Drawing.Size(13, 17);
+            this.lblChartCompressionRatio.TabIndex = 23;
+            this.lblChartCompressionRatio.Text = "-";
+            // 
+            // lblChartProcessingSpeed
+            // 
+            this.lblChartProcessingSpeed.AutoSize = true;
+            this.lblChartProcessingSpeed.ForeColor = System.Drawing.Color.White;
+            this.lblChartProcessingSpeed.Location = new System.Drawing.Point(1307, 650);
+            this.lblChartProcessingSpeed.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblChartProcessingSpeed.Name = "lblChartProcessingSpeed";
+            this.lblChartProcessingSpeed.Size = new System.Drawing.Size(13, 17);
+            this.lblChartProcessingSpeed.TabIndex = 24;
+            this.lblChartProcessingSpeed.Text = "-";
+            // 
+            // lblProgress
+            // 
+            this.lblProgress.AutoSize = true;
+            this.lblProgress.ForeColor = System.Drawing.Color.White;
+            this.lblProgress.Location = new System.Drawing.Point(1361, 28);
+            this.lblProgress.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblProgress.Name = "lblProgress";
+            this.lblProgress.Size = new System.Drawing.Size(28, 17);
+            this.lblProgress.TabIndex = 25;
+            this.lblProgress.Text = "0%";
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
@@ -348,6 +434,12 @@ namespace CompressAudioFiles
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(26)))), ((int)(((byte)(26)))), ((int)(((byte)(46)))));
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.ClientSize = new System.Drawing.Size(1827, 922);
+            this.Controls.Add(this.lblProgress);
+            this.Controls.Add(this.lblChartProcessingSpeed);
+            this.Controls.Add(this.lblChartCompressionRatio);
+            this.Controls.Add(this.chartProcessingSpeed);
+            this.Controls.Add(this.chartCompressionRatio);
+            this.Controls.Add(this.progressBarCompression);
             this.Controls.Add(this.lblConvertedPath);
             this.Controls.Add(this.pnlProgressTrack);
             this.Controls.Add(this.lblTotalTime);
@@ -376,7 +468,8 @@ namespace CompressAudioFiles
             this.Margin = new System.Windows.Forms.Padding(4, 2, 4, 2);
             this.Name = "MainForm";
             this.Text = "Audio";
-            this.Load += new System.EventHandler(this.MainForm_Load);
+            ((System.ComponentModel.ISupportInitialize)(this.chartCompressionRatio)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.chartProcessingSpeed)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -408,6 +501,12 @@ namespace CompressAudioFiles
         private System.Windows.Forms.Label lblTotalTime;
         private System.Windows.Forms.Panel pnlProgressTrack;
         private System.Windows.Forms.Label lblConvertedPath;
+        private System.Windows.Forms.ProgressBar progressBarCompression;
+        private System.Windows.Forms.DataVisualization.Charting.Chart chartCompressionRatio;
+        private System.Windows.Forms.DataVisualization.Charting.Chart chartProcessingSpeed;
+        private System.Windows.Forms.Label lblChartCompressionRatio;
+        private System.Windows.Forms.Label lblChartProcessingSpeed;
+        private System.Windows.Forms.Label lblProgress;
     }
 }
 

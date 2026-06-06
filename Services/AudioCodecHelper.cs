@@ -238,6 +238,7 @@ namespace CompressAudioFiles.Services
             byte[] bytes = BitConverter.GetBytes(sample);
             writer.Write(bytes, 0, bytes.Length);
         }
+
     }
 
     internal class AudioSamplesData

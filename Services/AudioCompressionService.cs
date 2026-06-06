@@ -13,6 +13,52 @@ namespace CompressAudioFiles.Services
 {
     class AudioCompressionService
     {
+        public event EventHandler<OperationProgressEventArgs> ProgressChanged;
+
+        private void ReportProgress(
+            string algorithmName,
+            string operationName,
+            long processedSamples,
+            long totalSamples,
+            long originalSize,
+            string outputPath,
+            Stopwatch stopwatch)
+        {
+            if (processedSamples <= 0 || totalSamples <= 0)
+                return;
+
+            double progress = processedSamples * 100.0 / totalSamples;
+
+            long currentOutputSize = 0;
+
+            if (!string.IsNullOrWhiteSpace(outputPath) && File.Exists(outputPath))
+                currentOutputSize = new FileInfo(outputPath).Length;
+
+            double compressionRatio = 0;
+
+            if (currentOutputSize > 1024)
+            {
+                compressionRatio = (double)originalSize / currentOutputSize;
+            }
+
+            double speed = stopwatch.Elapsed.TotalSeconds <= 0
+                ? 0
+                : processedSamples / stopwatch.Elapsed.TotalSeconds;
+
+            ProgressChanged?.Invoke(this, new OperationProgressEventArgs
+            {
+                AlgorithmName = algorithmName,
+                OperationName = operationName,
+                ProcessedSamples = processedSamples,
+                TotalSamples = totalSamples,
+                ProgressPercentage = progress,
+                OriginalSizeBytes = originalSize,
+                CurrentOutputSizeBytes = currentOutputSize,
+                CompressionRatio = compressionRatio,
+                ProcessingSpeed = speed,
+                ElapsedTime = stopwatch.Elapsed
+            });
+        }
         // التابع العام
         public CompressionResult CompressAudio(string inputPath, CompressionSettings settings)
         {
@@ -52,6 +98,8 @@ namespace CompressAudioFiles.Services
                 throw new FileNotFoundException("Input audio file not found.", inputPath);
 
             Stopwatch stopwatch = Stopwatch.StartNew();
+
+            long originalSize = new FileInfo(inputPath).Length;
 
             string outputPath = AudioCodecHelper.GenerateCompressedFilePath(
                 inputPath,
@@ -93,6 +141,9 @@ namespace CompressAudioFiles.Services
                 float[] buffer = new float[4096];
                 int samplesRead;
 
+                long totalSamples = reader.Length / (reader.WaveFormat.BitsPerSample / 8);
+
+
                 while ((samplesRead = reader.Read(buffer, 0, buffer.Length)) > 0)
                 {
                     for (int i = 0; i < samplesRead; i++)
@@ -133,6 +184,19 @@ namespace CompressAudioFiles.Services
 
                         previousBit = bit;
                         totalSamplesWritten++;
+
+                        if (totalSamplesWritten % 1000 == 0)
+                        {
+                            ReportProgress(
+                                CompressionAlgorithms.AdaptiveDeltaModulation,
+                                "Compression",
+                                totalSamplesWritten,
+                                totalSamples,
+                                originalSize,
+                                outputPath,
+                                stopwatch
+                            );
+                        }
                     }
                 }
 
@@ -141,13 +205,22 @@ namespace CompressAudioFiles.Services
                     writer.Write(currentByte);
                 }
 
+                ReportProgress(
+                    CompressionAlgorithms.AdaptiveDeltaModulation,
+                    "Compression",
+                    totalSamplesWritten,
+                    totalSamples,
+                    originalSize,
+                    outputPath,
+                    stopwatch
+                );
+
                 writer.BaseStream.Seek(totalSamplesPosition, SeekOrigin.Begin);
                 writer.Write(totalSamplesWritten);
             }
 
             stopwatch.Stop();
 
-            long originalSize = new FileInfo(inputPath).Length;
             long compressedSize = new FileInfo(outputPath).Length;
 
             return new CompressionResult
@@ -174,6 +247,8 @@ namespace CompressAudioFiles.Services
 
             Stopwatch sw = Stopwatch.StartNew();
 
+            long originalSize = new FileInfo(inputPath).Length;
+
             AudioSamplesData audioData = AudioCodecHelper.ReadMonoSamples(inputPath);
             short[] samples = audioData.Samples;
 
@@ -182,7 +257,7 @@ namespace CompressAudioFiles.Services
                 return new CompressionResult
                 {
                     CompressedFilePath = null,
-                    OriginalFileSize = new FileInfo(inputPath).Length,
+                    OriginalFileSize = originalSize,
                     CompressedFileSize = 0,
                     CompressionRatio = 0,
                     CompressionTime = sw.Elapsed,
@@ -234,12 +309,24 @@ namespace CompressAudioFiles.Services
 
                     previous2 = previous1;
                     previous1 = reconstructed;
+
+                    if (i % 1000 == 0 || i == samples.Length - 1)
+                    {
+                        ReportProgress(
+                            CompressionAlgorithms.PredictiveDifferentialCoding,
+                            "Compression",
+                            i,
+                            samples.Length,
+                            originalSize,
+                            outputPath,
+                            sw
+                        );
+                    }
                 }
             }
 
             sw.Stop();
 
-            long originalSize = new FileInfo(inputPath).Length;
             long compressedSize = new FileInfo(outputPath).Length;
 
             return new CompressionResult
