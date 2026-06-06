@@ -13,9 +13,10 @@ namespace CompressAudioFiles.Models
         public int QuantizationLevels { get; set; }
         public int BitRate { get; set; }
         //FARAH RAM
-        public int DeltaStep { get; set; } 
+        public int DeltaStep { get; set; }
 
-
+        //Aya
+        public int PredictiveQuantizationStep { get; set; }
 
         public CompressionSettings()
         {
@@ -24,6 +25,7 @@ namespace CompressAudioFiles.Models
             QuantizationLevels = 2;
             BitRate = 1;
             DeltaStep = 1000;
+            PredictiveQuantizationStep = 256;
         }
 
 

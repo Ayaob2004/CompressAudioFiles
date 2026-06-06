@@ -28,9 +28,10 @@ namespace CompressAudioFiles.Services
                     return CompressUsingAdaptiveDeltaModulation(inputPath, settings);
                 case CompressionAlgorithms.DeltaModulation:
                     return CompressUsingDeltaModulation(inputPath, settings);
+                case CompressionAlgorithms.PredictiveDifferentialCoding:
+                    return CompressUsingPredictiveDifferentialCoding(inputPath, settings);
                 case CompressionAlgorithms.NonlinearQuantization:
                 case CompressionAlgorithms.DPCM:
-                case CompressionAlgorithms.PredictiveDifferentialCoding:
                 
                     throw new NotSupportedException(
                         "This algorithm is listed in the project plan, but it is not implemented in this section yet."
@@ -52,9 +53,10 @@ namespace CompressAudioFiles.Services
 
             Stopwatch stopwatch = Stopwatch.StartNew();
 
-            string outputPath = GenerateCompressedFilePath(
+            string outputPath = AudioCodecHelper.GenerateCompressedFilePath(
                 inputPath,
-                CompressionAlgorithms.AdaptiveDeltaModulation
+                CompressionAlgorithms.AdaptiveDeltaModulation,
+                ".adm"
             );
 
             long totalSamplesWritten = 0;
@@ -69,7 +71,7 @@ namespace CompressAudioFiles.Services
             using (var reader = new AudioFileReader(inputPath))
             using (var writer = new BinaryWriter(File.Create(outputPath)))
             {
-                long totalSamplesPosition = WriteHeader(
+                long totalSamplesPosition = AudioCodecHelper.WriteAdmHeader(
                     writer,
                     reader.WaveFormat.SampleRate,
                     reader.WaveFormat.Channels,
@@ -95,7 +97,7 @@ namespace CompressAudioFiles.Services
                 {
                     for (int i = 0; i < samplesRead; i++)
                     {
-                        short currentSample = FloatToPcm16(buffer[i]);
+                        short currentSample = AudioCodecHelper.FloatToPcm16(buffer[i]);
 
                         int bit;
 
@@ -110,7 +112,7 @@ namespace CompressAudioFiles.Services
                             predictedSample -= stepSize;
                         }
 
-                        predictedSample = Clamp(
+                        predictedSample = AudioCodecHelper.Clamp(
                             predictedSample,
                             short.MinValue,
                             short.MaxValue
@@ -125,9 +127,9 @@ namespace CompressAudioFiles.Services
                             stepSize = (int)(stepSize * decreaseFactor);
                         }
 
-                        stepSize = Clamp(stepSize, minStep, maxStep);
+                        stepSize = AudioCodecHelper.Clamp(stepSize, minStep, maxStep);
 
-                        PackBit(ref currentByte, ref bitPosition, bit, writer);
+                        AudioCodecHelper.PackBit(ref currentByte, ref bitPosition, bit, writer);
 
                         previousBit = bit;
                         totalSamplesWritten++;
@@ -161,97 +163,106 @@ namespace CompressAudioFiles.Services
                 UsedSettings = settings
             };
         }
-
-        private long WriteHeader(
-            BinaryWriter writer,
-            int sampleRate,
-            int channels,
-            int bitsPerSample,
-            int initialStep,
-            int minStep,
-            int maxStep,
-            double increaseFactor,
-            double decreaseFactor)
+        ///new///
+        public CompressionResult CompressUsingPredictiveDifferentialCoding(string inputPath, CompressionSettings settings)
         {
-            writer.Write("ADM1");
-            writer.Write(sampleRate);
-            writer.Write(channels);
-            writer.Write(bitsPerSample);
-            writer.Write(initialStep);
-            writer.Write(minStep);
-            writer.Write(maxStep);
-            writer.Write(increaseFactor);
-            writer.Write(decreaseFactor);
+            if (string.IsNullOrWhiteSpace(inputPath))
+                throw new ArgumentException("Input audio path is empty.");
 
-            long totalSamplesPosition = writer.BaseStream.Position;
+            if (!File.Exists(inputPath))
+                throw new FileNotFoundException("Input audio file not found.", inputPath);
 
-            writer.Write((long)0);
+            Stopwatch sw = Stopwatch.StartNew();
 
-            return totalSamplesPosition;
-        }
+            AudioSamplesData audioData = AudioCodecHelper.ReadMonoSamples(inputPath);
+            short[] samples = audioData.Samples;
 
-        private string GenerateCompressedFilePath(string inputPath, string algorithmName)
-        {
-            string directory = Path.GetDirectoryName(inputPath);
-            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(inputPath);
-
-            string algorithmSuffix = algorithmName
-                .Replace(" ", "_")
-                .Replace("-", "_");
-
-            string outputFileName = fileNameWithoutExtension
-                + "_compressed_"
-                + algorithmSuffix
-                + ".adm";
-
-            return Path.Combine(directory, outputFileName);
-        }
-
-        private short FloatToPcm16(float sample)
-        {
-            if (sample > 1.0f)
-                sample = 1.0f;
-
-            if (sample < -1.0f)
-                sample = -1.0f;
-
-            return (short)(sample * short.MaxValue);
-        }
-
-        private void PackBit(ref byte currentByte, ref int bitPosition, int bit, BinaryWriter writer)
-        {
-            if (bit == 1)
+            if (samples == null || samples.Length < 2)
             {
-                currentByte |= (byte)(1 << bitPosition);
+                return new CompressionResult
+                {
+                    CompressedFilePath = null,
+                    OriginalFileSize = new FileInfo(inputPath).Length,
+                    CompressedFileSize = 0,
+                    CompressionRatio = 0,
+                    CompressionTime = sw.Elapsed,
+                    AlgorithmName = CompressionAlgorithms.PredictiveDifferentialCoding,
+                    UsedSettings = settings,
+                    StatusMessage = "Audio file does not contain enough samples."
+                };
             }
 
-            bitPosition++;
+            int quantizationStep = settings.PredictiveQuantizationStep;
 
-            if (bitPosition == 8)
+            if (quantizationStep <= 0)
+                quantizationStep = 256;
+
+            string outputPath = Path.ChangeExtension(inputPath, ".pdc");
+
+            using (BinaryWriter writer = new BinaryWriter(File.Open(outputPath, FileMode.Create)))
             {
-                writer.Write(currentByte);
-                currentByte = 0;
-                bitPosition = 0;
+                AudioCodecHelper.WritePdcHeader(
+                    writer,
+                    audioData.SampleRate,
+                    1,
+                    16,
+                    quantizationStep,
+                    samples.Length,
+                    samples[0],
+                    samples[1]
+                );
+
+                int previous2 = samples[0];
+                int previous1 = samples[1];
+
+                for (int i = 2; i < samples.Length; i++)
+                {
+                    int predicted = (2 * previous1) - previous2;
+                    predicted = AudioCodecHelper.Clamp(predicted, short.MinValue, short.MaxValue);
+
+                    int error = samples[i] - predicted;
+
+                    int quantizedErrorInt = (int)Math.Round(error / (double)quantizationStep);
+                    quantizedErrorInt = AudioCodecHelper.Clamp(quantizedErrorInt, sbyte.MinValue, sbyte.MaxValue);
+
+                    sbyte quantizedError = (sbyte)quantizedErrorInt;
+
+                    writer.Write(quantizedError);
+
+                    int reconstructed = predicted + (quantizedError * quantizationStep);
+                    reconstructed = AudioCodecHelper.Clamp(reconstructed, short.MinValue, short.MaxValue);
+
+                    previous2 = previous1;
+                    previous1 = reconstructed;
+                }
             }
+
+            sw.Stop();
+
+            long originalSize = new FileInfo(inputPath).Length;
+            long compressedSize = new FileInfo(outputPath).Length;
+
+            return new CompressionResult
+            {
+                CompressedFilePath = outputPath,
+                OriginalFileSize = originalSize,
+                CompressedFileSize = compressedSize,
+                CompressionRatio = compressedSize == 0 ? 0 : (double)originalSize / compressedSize,
+                CompressionTime = sw.Elapsed,
+                AlgorithmName = CompressionAlgorithms.PredictiveDifferentialCoding,
+                UsedSettings = settings,
+                TotalSamples = samples.Length,
+                TotalBits = (samples.Length - 2) * 8,
+                StatusMessage = "Predictive Differential Coding compression completed successfully."
+            };
         }
-
-        private int Clamp(int value, int min, int max)
-        {
-            if (value < min)
-                return min;
-
-            if (value > max)
-                return max;
-
-            return value;
-        }
-
+        
         /////////////////////////////////////////////////////FARAH RAM/////////////////////////////////////////////////////////
         public CompressionResult CompressUsingDeltaModulation(string inputPath, CompressionSettings settings)
         {
             Stopwatch sw = Stopwatch.StartNew();
 
-            short[] samples = ReadSamples(inputPath);
+            short[] samples = AudioCodecHelper.ReadMonoSamples(inputPath).Samples;
 
             if (samples == null || samples.Length == 0)
             {
@@ -317,31 +328,5 @@ namespace CompressAudioFiles.Services
                 StatusMessage = "Compression completed successfully"
             };
         }
-        private short[] ReadSamples(string filePath)
-            {
-                List<short> samples = new List<short>();
-
-                using (var reader = new AudioFileReader(filePath))
-                {
-                    float[] buffer = new float[1024];
-                    int samplesRead;
-
-                    int channels = reader.WaveFormat.Channels;
-
-                    while ((samplesRead = reader.Read(buffer, 0, buffer.Length)) > 0)
-                    {
-                        for (int i = 0; i < samplesRead; i += channels)
-                        {
-                            float sampleF = buffer[i]; 
-
-                            short sample = (short)(sampleF * 32767f);
-
-                            samples.Add(sample);
-                        }
-                    }
-                }
-
-                return samples.ToArray();
-            }
     }
 }

@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using CompressAudioFiles.Models;
 using CompressAudioFiles.Services;
+using NAudio.Wave;
 
 namespace CompressAudioFiles
 {
@@ -157,8 +159,19 @@ namespace CompressAudioFiles
                 currentCompressionSettings.AlgorithmName =
                     cmbCompressionAlgorithm.SelectedItem.ToString();
 
+                string pathForCompression = ConvertToWav(currentAudioPath);
+
+                if (pathForCompression != currentAudioPath)
+                {
+                    lblConvertedPath.Text = "Converted WAV: " + pathForCompression;
+                }
+                else
+                {
+                    lblConvertedPath.Text = "Input is already WAV.";
+                }
+
                 lastCompressionResult = audioCompressionService.CompressAudio(
-                    currentAudioPath,
+                    pathForCompression,
                     currentCompressionSettings
                 );
 
@@ -265,6 +278,31 @@ namespace CompressAudioFiles
             {
                 LoadAudioFile(files[0]);
             }
+        }
+        //
+        string ConvertToWav(string inputFilePath)
+        {
+            string extension =
+                Path.GetExtension(inputFilePath).ToLower();
+
+            if (extension == ".wav")
+                return inputFilePath;
+
+            string outputPath =
+                Path.Combine(
+                    Path.GetDirectoryName(inputFilePath),
+                    Path.GetFileNameWithoutExtension(inputFilePath) + "_temp.wav"
+                );
+
+            using (AudioFileReader reader =
+                   new AudioFileReader(inputFilePath))
+            {
+                WaveFileWriter.CreateWaveFile16(
+                    outputPath,
+                    reader);
+            }
+
+            return outputPath;
         }
     }
 }
