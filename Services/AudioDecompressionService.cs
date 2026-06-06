@@ -33,6 +33,7 @@ namespace CompressAudioFiles.Services
                 case CompressionAlgorithms.PredictiveDifferentialCoding:
                     return DecompressPredictiveDifferentialCoding(compressedFilePath);
                 case CompressionAlgorithms.NonlinearQuantization:
+                    return DecompressNonlinearQuantization(compressedFilePath);
                 case CompressionAlgorithms.DPCM:
                     throw new NotSupportedException(
                         "This decompression algorithm is listed in the project plan, but it is not implemented in this section yet."
@@ -190,6 +191,49 @@ namespace CompressAudioFiles.Services
 
                         previous2 = previous1;
                         previous1 = reconstructed;
+                    }
+                }
+            }
+
+            return outputPath;
+        }
+
+        /////////////Reham Mah
+        public string DecompressNonlinearQuantization(string compressedFilePath)
+        {
+            string outputPath = AudioCodecHelper.GenerateOutputPath(
+                compressedFilePath,
+                "_decompressed",
+                ".wav"
+            );
+
+            using (var reader = new BinaryReader(File.OpenRead(compressedFilePath)))
+            {
+               
+                NqHeader header = AudioCodecHelper.ReadNqHeader(reader);
+                WaveFormat outputFormat = new WaveFormat(
+                    header.SampleRate,
+                    16,
+                    header.Channels
+                );
+
+                using (var waveWriter = new WaveFileWriter(outputPath, outputFormat))
+                {
+                    for (long i = 0; i < header.TotalSamples; i++)
+                    {
+                        byte quantized = reader.ReadByte();
+                        double y = (quantized / (double)(header.Levels - 1)) * 2.0 - 1.0;
+                        double x = Math.Sign(y)
+                                 * (Math.Pow(1.0 + header.MuValue, Math.Abs(y)) - 1.0)
+                                 / header.MuValue;
+                        short sample = (short)(
+                            AudioCodecHelper.Clamp(
+                                (int)(x * 32767),
+                                short.MinValue,
+                                short.MaxValue
+                            )
+                        );
+                        AudioCodecHelper.WritePcm16Sample(waveWriter, sample);
                     }
                 }
             }

@@ -31,6 +31,7 @@ namespace CompressAudioFiles.Services
                 case CompressionAlgorithms.PredictiveDifferentialCoding:
                     return CompressUsingPredictiveDifferentialCoding(inputPath, settings);
                 case CompressionAlgorithms.NonlinearQuantization:
+                    return CompressUsingNonlinearQuantization(inputPath, settings);
                 case CompressionAlgorithms.DPCM:
                 
                     throw new NotSupportedException(
@@ -326,6 +327,85 @@ namespace CompressAudioFiles.Services
                 TotalSamples = samples.Length,
                 TotalBits = bits.Count,
                 StatusMessage = "Compression completed successfully"
+            };
+        }
+
+
+
+        ////////////////Reham Mah
+        public CompressionResult CompressUsingNonlinearQuantization(string inputPath, CompressionSettings settings)
+        {
+            if (string.IsNullOrWhiteSpace(inputPath))
+                throw new ArgumentException("Input audio path is empty.");
+
+            if (!File.Exists(inputPath))
+                throw new FileNotFoundException("Input audio file not found.", inputPath);
+            Stopwatch sw = Stopwatch.StartNew();
+
+            const int muValue = 255;  
+            const int levels = 256;
+
+            string outputPath = AudioCodecHelper.GenerateCompressedFilePath(inputPath,CompressionAlgorithms.NonlinearQuantization,".nq");
+            long totalSamplesWritten = 0;
+            using (var reader = new AudioFileReader(inputPath))
+            using (var writer = new BinaryWriter(File.Create(outputPath)))
+            {
+                long totalSamplesPosition = AudioCodecHelper.WriteNqHeader(
+                    writer,
+                    reader.WaveFormat.SampleRate,
+                    reader.WaveFormat.Channels,
+                    reader.WaveFormat.BitsPerSample,
+                    muValue,
+                    levels
+                );
+
+                float[] buffer = new float[4096];
+                int samplesRead;
+
+                while ((samplesRead = reader.Read(buffer, 0, buffer.Length)) > 0)
+                {
+                    for (int i = 0; i < samplesRead; i++)
+                    {
+                        double x = AudioCodecHelper.Clamp(
+                            (int)(buffer[i] * 32767),
+                            short.MinValue,
+                            short.MaxValue
+                        ) / 32767.0;
+
+                      
+                        double y = Math.Sign(x)
+                                 * Math.Log(1.0 + muValue * Math.Abs(x))
+                                 / Math.Log(1.0 + muValue);
+
+                        int quantized = (int)((y + 1.0) / 2.0 * (levels - 1));
+                        quantized = AudioCodecHelper.Clamp(quantized, 0, levels - 1);
+                        writer.Write((byte)quantized);
+                        totalSamplesWritten++;
+                    }
+                }
+
+                writer.BaseStream.Seek(totalSamplesPosition, SeekOrigin.Begin);
+                writer.Write(totalSamplesWritten);
+            }
+
+            sw.Stop();
+
+            long originalSize = new FileInfo(inputPath).Length;
+            long compressedSize = new FileInfo(outputPath).Length;
+
+            return new CompressionResult
+            {
+                CompressedFilePath = outputPath,
+                OriginalFileSize = originalSize,
+                CompressedFileSize = compressedSize,
+                CompressionRatio = compressedSize == 0
+                                     ? 0
+                                     : (double)originalSize / compressedSize,
+                CompressionTime = sw.Elapsed,
+                AlgorithmName = CompressionAlgorithms.NonlinearQuantization,
+                UsedSettings = settings,
+                TotalSamples = (int)totalSamplesWritten,
+                StatusMessage = "Nonlinear Quantization compression completed successfully."
             };
         }
     }

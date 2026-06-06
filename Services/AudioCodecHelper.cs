@@ -199,6 +199,42 @@ namespace CompressAudioFiles.Services
 
             return header;
         }
+        ///////////////////////////////////////////////////////////rrr
+        public static long WriteNqHeader(BinaryWriter writer,int sampleRate,int channels,int bitsPerSample,int muValue,int levels)
+        {
+            writer.Write("NQ1");        
+            writer.Write(sampleRate);
+            writer.Write(channels);
+            writer.Write(bitsPerSample);
+            writer.Write(muValue);
+            writer.Write(levels);
+            long totalSamplesPosition = writer.BaseStream.Position;
+            writer.Write((long)0);
+            return totalSamplesPosition;
+        }
+        public static NqHeader ReadNqHeader(BinaryReader reader)
+        {
+            string magic = reader.ReadString();
+            if (magic != "NQ1")
+                throw new InvalidDataException("Invalid NQ compressed file.");
+
+            var header = new NqHeader
+            {
+                SampleRate = reader.ReadInt32(),
+                Channels = reader.ReadInt32(),
+                BitsPerSample = reader.ReadInt32(),
+                MuValue = reader.ReadInt32(),
+                Levels = reader.ReadInt32(),
+                TotalSamples = reader.ReadInt64()
+            };
+
+            if (header.SampleRate <= 0) throw new InvalidDataException("Invalid sample rate.");
+            if (header.Channels <= 0) throw new InvalidDataException("Invalid channels.");
+            if (header.TotalSamples <= 0) throw new InvalidDataException("Invalid samples count.");
+
+            return header;
+        }
+        /////////////////////////////////////////////////////////
 
         public static void PackBit(ref byte currentByte, ref int bitPosition, int bit, BinaryWriter writer)
         {
@@ -268,5 +304,16 @@ namespace CompressAudioFiles.Services
         public long TotalSamples { get; set; }
         public short FirstSample { get; set; }
         public short SecondSample { get; set; }
+    }
+
+
+    internal class NqHeader
+    {
+        public int SampleRate { get; set; }
+        public int Channels { get; set; }
+        public int BitsPerSample { get; set; }
+        public int MuValue { get; set; }  
+        public int Levels { get; set; }  
+        public long TotalSamples { get; set; }
     }
 }
