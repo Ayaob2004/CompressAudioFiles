@@ -6,11 +6,14 @@ using System.Threading.Tasks;
 using System.IO;
 using NAudio.Wave;
 using CompressAudioFiles.Models;
+using System.Diagnostics;
 
 namespace CompressAudioFiles.Services
 {
     class AudioDecompressionService
     {
+        public event EventHandler<OperationProgressEventArgs> ProgressChanged;
+        
         //التابع العام
         public string DecompressAudio(string compressedFilePath, string algorithmName)
         {

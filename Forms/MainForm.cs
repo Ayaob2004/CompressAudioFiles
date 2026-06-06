@@ -1,16 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using CompressAudioFiles.Models;
 using CompressAudioFiles.Services;
 using NAudio.Wave;
+using System.Windows.Forms.DataVisualization.Charting;
+using System.Threading.Tasks;
 
 namespace CompressAudioFiles
 {
@@ -28,14 +24,23 @@ namespace CompressAudioFiles
         private Panel _progressFill;
         private string FormatTime(TimeSpan t)=> $"{(int)t.TotalMinutes:D2}:{t.Seconds:D2}";
         private readonly AudioDecompressionService audioDecompressionService;
+        private CompressionMonitoringService monitoringService;
 
         public MainForm()
         {
             InitializeComponent();
             audioMetadataService = new AudioMetadataService();
-            audioCompressionService = new AudioCompressionService();
             currentCompressionSettings = new CompressionSettings();
+            audioCompressionService = new AudioCompressionService();
             audioDecompressionService = new AudioDecompressionService();
+            monitoringService = new CompressionMonitoringService();
+
+            audioCompressionService.ProgressChanged += monitoringService.HandleProgress;
+            audioDecompressionService.ProgressChanged += monitoringService.HandleProgress;
+
+            monitoringService.MonitoringUpdated += MonitoringService_MonitoringUpdated;
+            SetupMonitoringCharts();
+
             InitializeCompressionAlgorithms();
            
             this.AllowDrop = true;
@@ -45,6 +50,58 @@ namespace CompressAudioFiles
             player = new AudioPlayerService();
             player.OnPositionChanged += Player_OnPositionChanged;
            SetupPlayerUI();
+        }
+
+        private void SetupMonitoringCharts()
+        {
+            chartCompressionRatio.Series.Clear();
+            chartCompressionRatio.ChartAreas.Clear();
+
+            ChartArea ratioArea = new ChartArea("RatioArea");
+            chartCompressionRatio.ChartAreas.Add(ratioArea);
+
+            Series ratioSeries = new Series("CompressionRatio");
+            ratioSeries.ChartType = SeriesChartType.Line;
+            ratioSeries.BorderWidth = 2;
+            chartCompressionRatio.Series.Add(ratioSeries);
+
+            chartCompressionRatio.Titles.Clear();
+            chartCompressionRatio.Titles.Add("Compression Ratio During Execution");
+
+
+            chartProcessingSpeed.Series.Clear();
+            chartProcessingSpeed.ChartAreas.Clear();
+
+            ChartArea speedArea = new ChartArea("SpeedArea");
+            chartProcessingSpeed.ChartAreas.Add(speedArea);
+
+            Series speedSeries = new Series("ProcessingSpeed");
+            speedSeries.ChartType = SeriesChartType.Line;
+            speedSeries.BorderWidth = 2;
+            chartProcessingSpeed.Series.Add(speedSeries);
+
+            chartProcessingSpeed.Titles.Clear();
+            chartProcessingSpeed.Titles.Add("Processing Speed During Execution");
+        }
+
+        private void MonitoringService_MonitoringUpdated(object sender, OperationProgressEventArgs e)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new Action(() => MonitoringService_MonitoringUpdated(sender, e)));
+                return;
+            }
+
+            int progressValue = Math.Min(100, Math.Max(0, (int)e.ProgressPercentage));
+
+            progressBarCompression.Value = progressValue;
+
+            lblProgress.Text = $"{e.ProgressPercentage:F1}%";
+            lblChartCompressionRatio.Text = $"Ratio: {e.CompressionRatio:F2}";
+            lblChartProcessingSpeed.Text = $"Speed: {e.ProcessingSpeed:F0} samples/sec";
+
+            chartCompressionRatio.Series["CompressionRatio"].Points.AddY(e.CompressionRatio);
+            chartProcessingSpeed.Series["ProcessingSpeed"].Points.AddY(e.ProcessingSpeed);
         }
 
         private void LoadAudioFile(string filePath)
@@ -140,7 +197,7 @@ namespace CompressAudioFiles
             cmbCompressionAlgorithm.SelectedItem = CompressionAlgorithms.AdaptiveDeltaModulation;
         }
 
-        private void btnCompress_Click(object sender, EventArgs e)
+        private async void btnCompress_Click(object sender, EventArgs e)
         {
             if (!isAudioLoaded || string.IsNullOrWhiteSpace(currentAudioPath))
             {
@@ -168,6 +225,17 @@ namespace CompressAudioFiles
 
             try
             {
+                monitoringService.Reset();
+
+                progressBarCompression.Value = 0;
+
+                chartCompressionRatio.Series["CompressionRatio"].Points.Clear();
+                chartProcessingSpeed.Series["ProcessingSpeed"].Points.Clear();
+
+                lblProgress.Text = "0%";
+                lblChartCompressionRatio.Text = "Ratio: 0";
+                lblChartProcessingSpeed.Text = "Speed: 0 samples/sec";
+
                 btnCompress.Enabled = false;
                 btnCompress.Text = "Compressing...";
 
@@ -184,11 +252,11 @@ namespace CompressAudioFiles
                 {
                     lblConvertedPath.Text = "Input is already WAV.";
                 }
+                lastCompressionResult = await Task.Run(() =>
+                {
+                    return audioCompressionService.CompressAudio(pathForCompression, currentCompressionSettings);
 
-                lastCompressionResult = audioCompressionService.CompressAudio(
-                    pathForCompression,
-                    currentCompressionSettings
-                );
+                });
 
                 DisplayCompressionResult(lastCompressionResult);
 
@@ -320,10 +388,6 @@ namespace CompressAudioFiles
             return outputPath;
         }
 
-        private void MainForm_Load(object sender, EventArgs e)
-        {
-
-        }
 
         private void Player_OnPositionChanged(TimeSpan position)
         {
@@ -402,5 +466,6 @@ namespace CompressAudioFiles
             _progressFill.Width = 0;
             lblCurrentTime.Text = "00:00";
         }
+
     }
 }
