@@ -24,6 +24,9 @@ namespace CompressAudioFiles
         private string decompressedFilePath;
         private readonly AudioMetadataService audioMetadataService;
         private readonly AudioCompressionService audioCompressionService;
+        private AudioPlayerService player;
+        private Panel _progressFill;
+        private string FormatTime(TimeSpan t)=> $"{(int)t.TotalMinutes:D2}:{t.Seconds:D2}";
         private readonly AudioDecompressionService audioDecompressionService;
 
         public MainForm()
@@ -34,11 +37,14 @@ namespace CompressAudioFiles
             currentCompressionSettings = new CompressionSettings();
             audioDecompressionService = new AudioDecompressionService();
             InitializeCompressionAlgorithms();
-
+           
             this.AllowDrop = true;
             this.DragEnter += MainForm_DragEnter;
             this.DragDrop += MainForm_DragDrop;
 
+            player = new AudioPlayerService();
+            player.OnPositionChanged += Player_OnPositionChanged;
+           SetupPlayerUI();
         }
 
         private void LoadAudioFile(string filePath)
@@ -53,7 +59,16 @@ namespace CompressAudioFiles
                 DisplayAudioMetadata(currentAudioMetadata);
 
                 lblFilePath.Text = currentAudioPath;
+                bool loaded = player.LoadAudioForPreview(filePath);
+                if (loaded)
+                {
+                    _progressFill.Width = 0;
+                    lblCurrentTime.Text = "00:00";
+                    lblTotalTime.Text = FormatTime(player.CurrentAudioDuration);
+                    btnPlay.Text = "▶";
+                }
             }
+            
             catch (Exception ex)
             {
                 isAudioLoaded = false;
@@ -304,5 +319,91 @@ namespace CompressAudioFiles
 
             return outputPath;
         }
+
+        private void MainForm_Load(object sender, EventArgs e)
+        {
+
+        }
+
+        private void Player_OnPositionChanged(TimeSpan position)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(new Action(() => Player_OnPositionChanged(position)));
+                return;
+            }
+
+            double total = player.CurrentAudioDuration.TotalSeconds;
+
+            if (total > 0)
+            {
+                double percent = position.TotalSeconds / total;
+                _progressFill.Width = (int)(percent * pnlProgressTrack.Width);
+                lblCurrentTime.Text = FormatTime(position);
+            }
+
+            if (!player.IsAudioPlaying && !player.IsAudioPaused)
+                btnPlay.Text = "▶";
+        }
+        private void btnPlay_Click(object sender, EventArgs e)
+        {
+            if (!isAudioLoaded) return;
+
+            if (player.IsAudioPlaying)
+            {
+                player.PauseAudio();
+                btnPlay.Text = "▶";
+            }
+            else
+            {
+                player.PlayAudio();
+                btnPlay.Text = "⏸";
+            }
+        }
+
+        private void SetupPlayerUI()
+        {
+            // لجزء الممتلئ من الشريط
+            _progressFill = new Panel
+            {
+                Location = new Point(0, 0),
+                Size = new Size(0, pnlProgressTrack.Height),
+                BackColor = Color.FromArgb(55, 138, 221)
+            };
+
+            pnlProgressTrack.Controls.Add(_progressFill);
+
+            // كليك على الشريط
+            pnlProgressTrack.MouseDown += ProgressBar_MouseDown;
+            _progressFill.MouseDown += ProgressBar_MouseDown;
+        }
+
+        private void ProgressBar_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (!isAudioLoaded) return;
+
+            int clickX = sender == _progressFill
+                ? _progressFill.Left + e.X
+                : e.X;
+
+            double percent = Math.Max(0, Math.Min(1,
+                (double)clickX / pnlProgressTrack.Width));
+
+            _progressFill.Width = (int)(percent * pnlProgressTrack.Width);
+
+            player.SetAudioPosition(TimeSpan.FromSeconds(
+                player.CurrentAudioDuration.TotalSeconds * percent));
+        }
+
+        private void btnstop_Click(object sender, EventArgs e)
+        {
+            player.StopAudio();
+            btnPlay.Text = "▶";
+            _progressFill.Width = 0;
+            lblCurrentTime.Text = "00:00";
+        }
+
+
+        
     }
 }
