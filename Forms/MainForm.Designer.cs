@@ -66,8 +66,20 @@ namespace CompressAudioFiles
             this.lblChartCompressionRatio = new System.Windows.Forms.Label();
             this.lblChartProcessingSpeed = new System.Windows.Forms.Label();
             this.lblProgress = new System.Windows.Forms.Label();
+            this.grpCompressionSettings = new System.Windows.Forms.GroupBox();
+            this.cmbSampleRate = new System.Windows.Forms.ComboBox();
+            this.cmbQuantizationLevels = new System.Windows.Forms.ComboBox();
+            this.nudDeltaStep = new System.Windows.Forms.NumericUpDown();
+            this.nudPredictiveQuantizationStep = new System.Windows.Forms.NumericUpDown();
+            this.lblSampleRate2 = new System.Windows.Forms.Label();
+            this.lblQuantizationLevels = new System.Windows.Forms.Label();
+            this.lblDeltaStep = new System.Windows.Forms.Label();
+            this.lblPredictiveQuantizationStep = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.chartCompressionRatio)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.chartProcessingSpeed)).BeginInit();
+            this.grpCompressionSettings.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.nudDeltaStep)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nudPredictiveQuantizationStep)).BeginInit();
             this.SuspendLayout();
             // 
             // btnChooseAudio
@@ -427,6 +439,90 @@ namespace CompressAudioFiles
             this.lblProgress.TabIndex = 25;
             this.lblProgress.Text = "0%";
             // 
+            // grpCompressionSettings
+            // 
+            this.grpCompressionSettings.Controls.Add(this.lblPredictiveQuantizationStep);
+            this.grpCompressionSettings.Controls.Add(this.lblDeltaStep);
+            this.grpCompressionSettings.Controls.Add(this.lblQuantizationLevels);
+            this.grpCompressionSettings.Controls.Add(this.lblSampleRate2);
+            this.grpCompressionSettings.Controls.Add(this.nudPredictiveQuantizationStep);
+            this.grpCompressionSettings.Controls.Add(this.nudDeltaStep);
+            this.grpCompressionSettings.Controls.Add(this.cmbQuantizationLevels);
+            this.grpCompressionSettings.Controls.Add(this.cmbSampleRate);
+            this.grpCompressionSettings.ForeColor = System.Drawing.Color.White;
+            this.grpCompressionSettings.Location = new System.Drawing.Point(39, 351);
+            this.grpCompressionSettings.Name = "grpCompressionSettings";
+            this.grpCompressionSettings.Size = new System.Drawing.Size(459, 236);
+            this.grpCompressionSettings.TabIndex = 26;
+            this.grpCompressionSettings.TabStop = false;
+            this.grpCompressionSettings.Text = "Compression Settings";
+            // 
+            // cmbSampleRate
+            // 
+            this.cmbSampleRate.FormattingEnabled = true;
+            this.cmbSampleRate.Location = new System.Drawing.Point(274, 44);
+            this.cmbSampleRate.Name = "cmbSampleRate";
+            this.cmbSampleRate.Size = new System.Drawing.Size(152, 24);
+            this.cmbSampleRate.TabIndex = 0;
+            // 
+            // cmbQuantizationLevels
+            // 
+            this.cmbQuantizationLevels.FormattingEnabled = true;
+            this.cmbQuantizationLevels.Location = new System.Drawing.Point(274, 86);
+            this.cmbQuantizationLevels.Name = "cmbQuantizationLevels";
+            this.cmbQuantizationLevels.Size = new System.Drawing.Size(152, 24);
+            this.cmbQuantizationLevels.TabIndex = 0;
+            // 
+            // nudDeltaStep
+            // 
+            this.nudDeltaStep.Location = new System.Drawing.Point(275, 137);
+            this.nudDeltaStep.Name = "nudDeltaStep";
+            this.nudDeltaStep.Size = new System.Drawing.Size(151, 22);
+            this.nudDeltaStep.TabIndex = 1;
+            // 
+            // nudPredictiveQuantizationStep
+            // 
+            this.nudPredictiveQuantizationStep.Location = new System.Drawing.Point(275, 178);
+            this.nudPredictiveQuantizationStep.Name = "nudPredictiveQuantizationStep";
+            this.nudPredictiveQuantizationStep.Size = new System.Drawing.Size(151, 22);
+            this.nudPredictiveQuantizationStep.TabIndex = 2;
+            // 
+            // lblSampleRate2
+            // 
+            this.lblSampleRate2.AutoSize = true;
+            this.lblSampleRate2.Location = new System.Drawing.Point(36, 51);
+            this.lblSampleRate2.Name = "lblSampleRate2";
+            this.lblSampleRate2.Size = new System.Drawing.Size(89, 17);
+            this.lblSampleRate2.TabIndex = 3;
+            this.lblSampleRate2.Text = "Sample Rate";
+            // 
+            // lblQuantizationLevels
+            // 
+            this.lblQuantizationLevels.AutoSize = true;
+            this.lblQuantizationLevels.Location = new System.Drawing.Point(36, 93);
+            this.lblQuantizationLevels.Name = "lblQuantizationLevels";
+            this.lblQuantizationLevels.Size = new System.Drawing.Size(133, 17);
+            this.lblQuantizationLevels.TabIndex = 3;
+            this.lblQuantizationLevels.Text = "Quantization Levels";
+            // 
+            // lblDeltaStep
+            // 
+            this.lblDeltaStep.AutoSize = true;
+            this.lblDeltaStep.Location = new System.Drawing.Point(37, 142);
+            this.lblDeltaStep.Name = "lblDeltaStep";
+            this.lblDeltaStep.Size = new System.Drawing.Size(74, 17);
+            this.lblDeltaStep.TabIndex = 3;
+            this.lblDeltaStep.Text = "Delta Step";
+            // 
+            // lblPredictiveQuantizationStep
+            // 
+            this.lblPredictiveQuantizationStep.AutoSize = true;
+            this.lblPredictiveQuantizationStep.Location = new System.Drawing.Point(37, 183);
+            this.lblPredictiveQuantizationStep.Name = "lblPredictiveQuantizationStep";
+            this.lblPredictiveQuantizationStep.Size = new System.Drawing.Size(187, 17);
+            this.lblPredictiveQuantizationStep.TabIndex = 3;
+            this.lblPredictiveQuantizationStep.Text = "Predictive Quantization Step";
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
@@ -434,6 +530,7 @@ namespace CompressAudioFiles
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(26)))), ((int)(((byte)(26)))), ((int)(((byte)(46)))));
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.ClientSize = new System.Drawing.Size(1827, 922);
+            this.Controls.Add(this.grpCompressionSettings);
             this.Controls.Add(this.lblProgress);
             this.Controls.Add(this.lblChartProcessingSpeed);
             this.Controls.Add(this.lblChartCompressionRatio);
@@ -470,6 +567,10 @@ namespace CompressAudioFiles
             this.Text = "Audio";
             ((System.ComponentModel.ISupportInitialize)(this.chartCompressionRatio)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.chartProcessingSpeed)).EndInit();
+            this.grpCompressionSettings.ResumeLayout(false);
+            this.grpCompressionSettings.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.nudDeltaStep)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nudPredictiveQuantizationStep)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -507,6 +608,15 @@ namespace CompressAudioFiles
         private System.Windows.Forms.Label lblChartCompressionRatio;
         private System.Windows.Forms.Label lblChartProcessingSpeed;
         private System.Windows.Forms.Label lblProgress;
+        private System.Windows.Forms.GroupBox grpCompressionSettings;
+        private System.Windows.Forms.ComboBox cmbSampleRate;
+        private System.Windows.Forms.Label lblPredictiveQuantizationStep;
+        private System.Windows.Forms.Label lblDeltaStep;
+        private System.Windows.Forms.Label lblQuantizationLevels;
+        private System.Windows.Forms.Label lblSampleRate2;
+        private System.Windows.Forms.NumericUpDown nudPredictiveQuantizationStep;
+        private System.Windows.Forms.NumericUpDown nudDeltaStep;
+        private System.Windows.Forms.ComboBox cmbQuantizationLevels;
     }
 }
 

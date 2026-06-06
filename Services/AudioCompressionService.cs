@@ -298,8 +298,23 @@ namespace CompressAudioFiles.Services
 
                     int error = samples[i] - predicted;
 
+                    int levels = settings.QuantizationLevels;
+
+                    if (levels < 2)
+                        levels = 256;
+
+                    int halfLevels = levels / 2;
+
+                    int minQuantizedValue = -halfLevels;
+                    int maxQuantizedValue = halfLevels - 1;
+
                     int quantizedErrorInt = (int)Math.Round(error / (double)quantizationStep);
-                    quantizedErrorInt = AudioCodecHelper.Clamp(quantizedErrorInt, sbyte.MinValue, sbyte.MaxValue);
+
+                    quantizedErrorInt = AudioCodecHelper.Clamp(
+                        quantizedErrorInt,
+                        minQuantizedValue,
+                        maxQuantizedValue
+                    );
 
                     sbyte quantizedError = (sbyte)quantizedErrorInt;
 
@@ -344,7 +359,7 @@ namespace CompressAudioFiles.Services
                 StatusMessage = "Predictive Differential Coding compression completed successfully."
             };
         }
-        
+
         /////////////////////////////////////////////////////FARAH RAM/////////////////////////////////////////////////////////
         public CompressionResult CompressUsingDeltaModulation(string inputPath, CompressionSettings settings)
         {
@@ -361,41 +376,49 @@ namespace CompressAudioFiles.Services
                 };
             }
 
-            List<bool> bits = new List<bool>();
+            string outputPath = Path.ChangeExtension(inputPath, ".dm");
 
-            short predicted = samples[0];
             int step = settings.DeltaStep;
 
-            for (int i = 1; i < samples.Length; i++)
-            {
-                if (samples[i] >= predicted)
-                {
-                    bits.Add(true);
-                    predicted += (short)step;
-                }
-                else
-                {
-                    bits.Add(false);
-                    predicted -= (short)step;
-                }
-            }
+            if (step <= 0)
+                step = 1000;
 
-            sw.Stop();
-
-            string outputPath = Path.ChangeExtension(inputPath, ".dm");
+            int bitsCount = 0;
 
             using (BinaryWriter writer = new BinaryWriter(File.Open(outputPath, FileMode.Create)))
             {
-                writer.Write(samples[0]);          // First sample
-                writer.Write(step);               // Delta step
-                writer.Write(bits.Count);         // Number of bits
+                writer.Write(samples[0]);      // First sample
+                writer.Write(step);            // Delta step
 
-                foreach (bool bit in bits)
+                long bitsCountPosition = writer.BaseStream.Position;
+                writer.Write(0);               // Placeholder for number of bits
+
+                short predicted = samples[0];
+
+                for (int i = 1; i < samples.Length; i++)
                 {
-                    writer.Write(bit);            // 1 bit (bool)
+                    bool bit;
+
+                    if (samples[i] >= predicted)
+                    {
+                        bit = true;
+                        predicted += (short)step;
+                    }
+                    else
+                    {
+                        bit = false;
+                        predicted -= (short)step;
+                    }
+
+                    writer.Write(bit);         // نكتب مباشرة داخل الملف أثناء الـ for
+                    bitsCount++;
                 }
+
+                writer.BaseStream.Seek(bitsCountPosition, SeekOrigin.Begin);
+                writer.Write(bitsCount);
             }
 
+            sw.Stop();
 
             long originalSize = new FileInfo(inputPath).Length;
             long compressedSize = new FileInfo(outputPath).Length;
@@ -412,11 +435,10 @@ namespace CompressAudioFiles.Services
                 AlgorithmName = CompressionAlgorithms.DeltaModulation,
                 UsedSettings = settings,
                 TotalSamples = samples.Length,
-                TotalBits = bits.Count,
+                TotalBits = bitsCount,
                 StatusMessage = "Compression completed successfully"
             };
         }
-
 
 
         ////////////////Reham Mah
@@ -429,8 +451,11 @@ namespace CompressAudioFiles.Services
                 throw new FileNotFoundException("Input audio file not found.", inputPath);
             Stopwatch sw = Stopwatch.StartNew();
 
-            const int muValue = 255;  
-            const int levels = 256;
+            const int muValue = 255;
+            int levels = settings.QuantizationLevels;
+
+            if (levels < 2)
+                levels = 256;
 
             string outputPath = AudioCodecHelper.GenerateCompressedFilePath(inputPath,CompressionAlgorithms.NonlinearQuantization,".nq");
             long totalSamplesWritten = 0;

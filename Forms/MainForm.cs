@@ -42,7 +42,14 @@ namespace CompressAudioFiles
             SetupMonitoringCharts();
 
             InitializeCompressionAlgorithms();
-           
+            InitializeCompressionSettingsControls();
+            UpdateCompressionSettingsVisibility();
+
+            cmbCompressionAlgorithm.SelectedIndexChanged += (s, e) =>
+            {
+                UpdateCompressionSettingsVisibility();
+            };
+
             this.AllowDrop = true;
             this.DragEnter += MainForm_DragEnter;
             this.DragDrop += MainForm_DragDrop;
@@ -192,9 +199,6 @@ namespace CompressAudioFiles
             cmbCompressionAlgorithm.Items.Add(CompressionAlgorithms.PredictiveDifferentialCoding);
             cmbCompressionAlgorithm.Items.Add(CompressionAlgorithms.DeltaModulation);
             cmbCompressionAlgorithm.Items.Add(CompressionAlgorithms.AdaptiveDeltaModulation);
-
-            cmbCompressionAlgorithm.DropDownStyle = ComboBoxStyle.DropDownList;
-            cmbCompressionAlgorithm.SelectedItem = CompressionAlgorithms.AdaptiveDeltaModulation;
         }
 
         private async void btnCompress_Click(object sender, EventArgs e)
@@ -239,10 +243,14 @@ namespace CompressAudioFiles
                 btnCompress.Enabled = false;
                 btnCompress.Text = "Compressing...";
 
-                currentCompressionSettings.AlgorithmName =
-                    cmbCompressionAlgorithm.SelectedItem.ToString();
+                if (!TryReadCompressionSettingsFromUI())
+                    return;
 
                 string pathForCompression = ConvertToWav(currentAudioPath);
+                pathForCompression = ConvertSampleRateIfNeeded(
+                    pathForCompression,
+                    currentCompressionSettings.SampleRate
+                );
 
                 if (pathForCompression != currentAudioPath)
                 {
@@ -467,5 +475,128 @@ namespace CompressAudioFiles
             lblCurrentTime.Text = "00:00";
         }
 
+
+        ////////new for 6
+        private void InitializeCompressionSettingsControls()
+        {
+            cmbSampleRate.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbSampleRate.Items.Clear();
+            cmbSampleRate.Items.AddRange(new object[]
+            {
+            8000,
+            11025,
+            16000,
+            22050,
+            44100,
+            48000
+            });
+            cmbSampleRate.SelectedItem = currentCompressionSettings.SampleRate;
+
+            cmbQuantizationLevels.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbQuantizationLevels.Items.Clear();
+            cmbQuantizationLevels.Items.AddRange(new object[]
+            {
+            2, 4, 8, 16, 32, 64, 128, 256
+            });
+            cmbQuantizationLevels.SelectedItem = currentCompressionSettings.QuantizationLevels;
+
+            nudDeltaStep.Minimum = 1;
+            nudDeltaStep.Maximum = 8192;
+            nudDeltaStep.Increment = 10;
+            nudDeltaStep.Value = currentCompressionSettings.DeltaStep;
+
+            nudPredictiveQuantizationStep.Minimum = 1;
+            nudPredictiveQuantizationStep.Maximum = 8192;
+            nudPredictiveQuantizationStep.Increment = 10;
+            nudPredictiveQuantizationStep.Value = currentCompressionSettings.PredictiveQuantizationStep;
+        }
+        private void UpdateCompressionSettingsVisibility()
+        {
+            if (cmbCompressionAlgorithm.SelectedItem == null)
+                return;
+
+            string algorithm = cmbCompressionAlgorithm.SelectedItem.ToString();
+
+            bool isADM = algorithm == CompressionAlgorithms.AdaptiveDeltaModulation;
+            bool isPDC = algorithm == CompressionAlgorithms.PredictiveDifferentialCoding;
+            bool isDM = algorithm == CompressionAlgorithms.DeltaModulation;
+            bool isNQ = algorithm == CompressionAlgorithms.NonlinearQuantization;
+
+            bool showGeneralSettings = isADM || isPDC || isDM || isNQ;
+
+            lblSampleRate2.Visible = showGeneralSettings;
+            cmbSampleRate.Visible = showGeneralSettings;
+
+            lblQuantizationLevels.Visible = showGeneralSettings;
+            cmbQuantizationLevels.Visible = showGeneralSettings;
+
+            lblDeltaStep.Visible = isDM;
+            nudDeltaStep.Visible = isDM;
+
+            lblPredictiveQuantizationStep.Visible = isPDC;
+            nudPredictiveQuantizationStep.Visible = isPDC;
+
+            if (isADM || isDM)
+            {
+                cmbQuantizationLevels.SelectedItem = 2;
+                cmbQuantizationLevels.Enabled = false;
+            }
+            else
+            {
+                cmbQuantizationLevels.Enabled = true;
+            }
+        }
+        private bool TryReadCompressionSettingsFromUI()
+        {
+            if (cmbCompressionAlgorithm.SelectedItem == null)
+            {
+                MessageBox.Show("Please choose a compression algorithm.");
+                return false;
+            }
+
+            currentCompressionSettings.AlgorithmName =
+                cmbCompressionAlgorithm.SelectedItem.ToString();
+
+            currentCompressionSettings.SampleRate =
+                Convert.ToInt32(cmbSampleRate.SelectedItem);
+
+            currentCompressionSettings.QuantizationLevels =
+                Convert.ToInt32(cmbQuantizationLevels.SelectedItem);
+
+            currentCompressionSettings.DeltaStep =
+                (int)nudDeltaStep.Value;
+
+            currentCompressionSettings.PredictiveQuantizationStep =
+                (int)nudPredictiveQuantizationStep.Value;
+
+            return true;
+        }
+        private string ConvertSampleRateIfNeeded(string wavPath, int targetSampleRate)
+        {
+            using (var reader = new AudioFileReader(wavPath))
+            {
+                if (reader.WaveFormat.SampleRate == targetSampleRate)
+                    return wavPath;
+
+                string outputPath = Path.Combine(
+                    Path.GetDirectoryName(wavPath),
+                    Path.GetFileNameWithoutExtension(wavPath) + "_" + targetSampleRate + "Hz.wav"
+                );
+
+                var outputFormat = new WaveFormat(
+                    targetSampleRate,
+                    16,
+                    reader.WaveFormat.Channels
+                );
+
+                using (var resampler = new MediaFoundationResampler(reader, outputFormat))
+                {
+                    resampler.ResamplerQuality = 60;
+                    WaveFileWriter.CreateWaveFile(outputPath, resampler);
+                }
+
+                return outputPath;
+            }
+        }
     }
 }
