@@ -402,8 +402,5 @@ namespace CompressAudioFiles
             _progressFill.Width = 0;
             lblCurrentTime.Text = "00:00";
         }
-
-
-        
     }
 }
