@@ -50,6 +50,8 @@ namespace CompressAudioFiles
             this.lblCurrentTime = new System.Windows.Forms.Label();
             this.lblTotalTime = new System.Windows.Forms.Label();
             this.pnlProgressTrack = new System.Windows.Forms.Panel();
+            this.lblDecompressedPath = new System.Windows.Forms.Label();
+            this.btnDecompress = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // btnChooseAudio
@@ -201,6 +203,25 @@ namespace CompressAudioFiles
             this.lblAlgorithm.TabIndex = 11;
             this.lblAlgorithm.Text = "Algorithm";
             // 
+            // lblDecompressedPath
+            // 
+            this.lblDecompressedPath.AutoSize = true;
+            this.lblDecompressedPath.Location = new System.Drawing.Point(1051, 132);
+            this.lblDecompressedPath.Name = "lblDecompressedPath";
+            this.lblDecompressedPath.Size = new System.Drawing.Size(132, 17);
+            this.lblDecompressedPath.TabIndex = 1;
+            this.lblDecompressedPath.Text = "DecompressedPath";
+            // 
+            // btnDecompress
+            // 
+            this.btnDecompress.Location = new System.Drawing.Point(927, 121);
+            this.btnDecompress.Name = "btnDecompress";
+            this.btnDecompress.Size = new System.Drawing.Size(118, 44);
+            this.btnDecompress.TabIndex = 12;
+            this.btnDecompress.Text = "Decompress";
+            this.btnDecompress.UseVisualStyleBackColor = true;
+            this.btnDecompress.Click += new System.EventHandler(this.btnDecompress_Click);
+            // 
             // btnPlay
             // 
             this.btnPlay.Location = new System.Drawing.Point(469, 351);
@@ -258,6 +279,8 @@ namespace CompressAudioFiles
             this.Controls.Add(this.lblCurrentTime);
             this.Controls.Add(this.btnstop);
             this.Controls.Add(this.btnPlay);
+            this.ClientSize = new System.Drawing.Size(1437, 829);
+            this.Controls.Add(this.btnDecompress);
             this.Controls.Add(this.lblAlgorithm);
             this.Controls.Add(this.lblCompressionTime);
             this.Controls.Add(this.lblCompressionRatio);
@@ -272,6 +295,7 @@ namespace CompressAudioFiles
             this.Controls.Add(this.lblSampleRate);
             this.Controls.Add(this.lblDuration);
             this.Controls.Add(this.lblFileSize);
+            this.Controls.Add(this.lblDecompressedPath);
             this.Controls.Add(this.lblFilePath);
             this.Controls.Add(this.btnChooseAudio);
             this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
@@ -301,6 +325,8 @@ namespace CompressAudioFiles
         private System.Windows.Forms.Label lblCompressionRatio;
         private System.Windows.Forms.Label lblCompressionTime;
         private System.Windows.Forms.Label lblAlgorithm;
+        private System.Windows.Forms.Label lblDecompressedPath;
+        private System.Windows.Forms.Button btnDecompress;
         private System.Windows.Forms.Button btnPlay;
         private System.Windows.Forms.Button btnstop;
         private System.Windows.Forms.Label lblCurrentTime;
