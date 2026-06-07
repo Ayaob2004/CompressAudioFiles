@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using NAudio.Wave;
 using CompressAudioFiles.Models;
-
+using System.Threading;
 
 namespace CompressAudioFiles.Services
 {
@@ -11,6 +11,11 @@ namespace CompressAudioFiles.Services
     {
         public event EventHandler<OperationProgressEventArgs> ProgressChanged;
 
+
+        private bool IsCancellationRequested(CancellationToken cancellationToken)
+        {
+            return cancellationToken.IsCancellationRequested;
+        }
         private void ReportProgress(
             string algorithmName,
             string operationName,
@@ -59,7 +64,7 @@ namespace CompressAudioFiles.Services
             });
         }
         // التابع العام
-        public CompressionResult CompressAudio(string inputPath, CompressionSettings settings)
+        public CompressionResult CompressAudio(string inputPath, CompressionSettings settings,CancellationToken cancellationToken)
         {
             if (settings == null)
                 throw new ArgumentNullException(nameof(settings));
@@ -67,25 +72,27 @@ namespace CompressAudioFiles.Services
             if (string.IsNullOrWhiteSpace(settings.AlgorithmName))
                 throw new ArgumentException("Algorithm name is required.");
 
+            cancellationToken.ThrowIfCancellationRequested();
+
             switch (settings.AlgorithmName)
             {
                 case CompressionAlgorithms.AdaptiveDeltaModulation:
-                    return CompressUsingAdaptiveDeltaModulation(inputPath, settings);
+                    return CompressUsingAdaptiveDeltaModulation(inputPath, settings, cancellationToken);
                 case CompressionAlgorithms.DeltaModulation:
-                    return CompressUsingDeltaModulation(inputPath, settings);
+                    return CompressUsingDeltaModulation(inputPath, settings, cancellationToken);
                 case CompressionAlgorithms.PredictiveDifferentialCoding:
-                    return CompressUsingPredictiveDifferentialCoding(inputPath, settings);
+                    return CompressUsingPredictiveDifferentialCoding(inputPath, settings, cancellationToken);
                 case CompressionAlgorithms.NonlinearQuantization:
-                    return CompressUsingNonlinearQuantization(inputPath, settings);
+                    return CompressUsingNonlinearQuantization(inputPath, settings, cancellationToken);
                 case CompressionAlgorithms.DPCM:
-                    return CompressUsingDPCM(inputPath, settings);
+                    return CompressUsingDPCM(inputPath, settings, cancellationToken);
 
                 default:
                     throw new NotSupportedException("Unknown compression algorithm.");
             }
         }
 
-        public CompressionResult CompressUsingNonlinearQuantization(string inputPath, CompressionSettings settings)
+        public CompressionResult CompressUsingNonlinearQuantization( string inputPath, CompressionSettings settings, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(inputPath))
                 throw new ArgumentException("Input audio path is empty.");
@@ -110,6 +117,9 @@ namespace CompressAudioFiles.Services
             );
 
             long totalSamplesWritten = 0;
+            long totalSamples = 0;
+
+            bool wasCancelled = false;
 
             using (var reader = new AudioFileReader(inputPath))
             using (var writer = new BinaryWriter(File.Create(outputPath)))
@@ -126,7 +136,7 @@ namespace CompressAudioFiles.Services
                 float[] buffer = new float[4096];
                 int samplesRead;
 
-                long totalSamples =
+                totalSamples =
                     reader.Length / (reader.WaveFormat.BitsPerSample / 8);
 
                 TimeSpan reportInterval = TimeSpan.FromMilliseconds(100);
@@ -136,6 +146,12 @@ namespace CompressAudioFiles.Services
                 {
                     for (int i = 0; i < samplesRead; i++)
                     {
+                        if (IsCancellationRequested(cancellationToken))
+                        {
+                            wasCancelled = true;
+                            break;
+                        }
+
                         double x = AudioCodecHelper.Clamp(
                             (int)(buffer[i] * 32767),
                             short.MinValue,
@@ -168,20 +184,49 @@ namespace CompressAudioFiles.Services
                             );
                         }
                     }
+
+                    if (wasCancelled)
+                        break;
                 }
 
-                ReportProgress(
-                    CompressionAlgorithms.NonlinearQuantization,
-                    "Compression",
-                    totalSamplesWritten,
-                    totalSamples,
-                    originalSize,
-                    writer.BaseStream.Position,
-                    sw
-                );
+                if (!wasCancelled)
+                {
+                    ReportProgress(
+                        CompressionAlgorithms.NonlinearQuantization,
+                        "Compression",
+                        totalSamplesWritten,
+                        totalSamples,
+                        originalSize,
+                        writer.BaseStream.Position,
+                        sw
+                    );
 
-                writer.BaseStream.Seek(totalSamplesPosition, SeekOrigin.Begin);
-                writer.Write(totalSamplesWritten);
+                    writer.BaseStream.Seek(totalSamplesPosition, SeekOrigin.Begin);
+                    writer.Write(totalSamplesWritten);
+                }
+            }
+
+            if (wasCancelled)
+            {
+                sw.Stop();
+
+                if (File.Exists(outputPath))
+                {
+                    File.Delete(outputPath);
+                }
+
+                return new CompressionResult
+                {
+                    CompressedFilePath = null,
+                    OriginalFileSize = originalSize,
+                    CompressedFileSize = 0,
+                    CompressionRatio = 0,
+                    CompressionTime = sw.Elapsed,
+                    AlgorithmName = CompressionAlgorithms.NonlinearQuantization,
+                    UsedSettings = settings,
+                    TotalSamples = (int)totalSamplesWritten,
+                    StatusMessage = "Compression cancelled by user."
+                };
             }
 
             sw.Stop();
@@ -203,7 +248,7 @@ namespace CompressAudioFiles.Services
                 StatusMessage = "Nonlinear Quantization compression completed successfully."
             };
         }
-        public CompressionResult CompressUsingDPCM(string inputPath, CompressionSettings settings)
+        public CompressionResult CompressUsingDPCM(string inputPath, CompressionSettings settings, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(inputPath))
                 throw new ArgumentException("Input audio path is empty.");
@@ -240,6 +285,8 @@ namespace CompressAudioFiles.Services
 
             string outputPath = Path.ChangeExtension(inputPath, ".dpcm");
 
+            bool wasCancelled = false;
+
             using (BinaryWriter writer = new BinaryWriter(File.Open(outputPath, FileMode.Create)))
             {
                 AudioCodecHelper.WriteDpcmHeader(
@@ -259,27 +306,23 @@ namespace CompressAudioFiles.Services
 
                 for (int i = 1; i < samples.Length; i++)
                 {
+                    if (IsCancellationRequested(cancellationToken))
+                    {
+                        wasCancelled = true;
+                        break;
+                    }
+
                     int predicted = previousSample;
 
                     int error = samples[i] - predicted;
-
-                    int levels = settings.QuantizationLevels;
-
-                    if (levels < 2)
-                        levels = 256;
-
-                    int halfLevels = levels / 2;
-
-                    int minQuantizedValue = -halfLevels;
-                    int maxQuantizedValue = halfLevels - 1;
 
                     int quantizedErrorInt =
                         (int)Math.Round(error / (double)quantizationStep);
 
                     quantizedErrorInt = AudioCodecHelper.Clamp(
                         quantizedErrorInt,
-                        minQuantizedValue,
-                        maxQuantizedValue
+                        sbyte.MinValue,
+                        sbyte.MaxValue
                     );
 
                     sbyte quantizedError = (sbyte)quantizedErrorInt;
@@ -313,6 +356,26 @@ namespace CompressAudioFiles.Services
                     }
                 }
             }
+            if (wasCancelled)
+            {
+                sw.Stop();
+
+                if (File.Exists(outputPath))
+                    File.Delete(outputPath);
+
+                return new CompressionResult
+                {
+                    CompressedFilePath = null,
+                    OriginalFileSize = originalSize,
+                    CompressedFileSize = 0,
+                    CompressionRatio = 0,
+                    CompressionTime = sw.Elapsed,
+                    AlgorithmName = CompressionAlgorithms.DPCM,
+                    UsedSettings = settings,
+                    TotalSamples = samples.Length,
+                    StatusMessage = "Compression cancelled by user."
+                }; ;
+            }
 
             sw.Stop();
 
@@ -334,7 +397,7 @@ namespace CompressAudioFiles.Services
                 StatusMessage = "DPCM compression completed successfully."
             };
         }
-        public CompressionResult CompressUsingPredictiveDifferentialCoding(string inputPath, CompressionSettings settings)
+        public CompressionResult CompressUsingPredictiveDifferentialCoding(string inputPath, CompressionSettings settings, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(inputPath))
                 throw new ArgumentException("Input audio path is empty.");
@@ -371,6 +434,8 @@ namespace CompressAudioFiles.Services
 
             string outputPath = Path.ChangeExtension(inputPath, ".pdc");
 
+            bool wasCancelled = false;
+
             using (BinaryWriter writer = new BinaryWriter(File.Open(outputPath, FileMode.Create)))
             {
                 AudioCodecHelper.WritePdcHeader(
@@ -392,6 +457,12 @@ namespace CompressAudioFiles.Services
 
                 for (int i = 2; i < samples.Length; i++)
                 {
+                    if (IsCancellationRequested(cancellationToken))
+                    {
+                        wasCancelled = true;
+                        break;
+                    }
+
                     int predicted = (2 * previous1) - previous2;
                     predicted = AudioCodecHelper.Clamp(predicted, short.MinValue, short.MaxValue);
 
@@ -425,7 +496,6 @@ namespace CompressAudioFiles.Services
                     previous2 = previous1;
                     previous1 = reconstructed;
 
-
                     if (sw.Elapsed - lastReportTime >= reportInterval || i == samples.Length - 1)
                     {
                         lastReportTime = sw.Elapsed;
@@ -441,6 +511,29 @@ namespace CompressAudioFiles.Services
                         );
                     }
                 }
+            }
+
+            if (wasCancelled)
+            {
+                sw.Stop();
+
+                if (File.Exists(outputPath))
+                {
+                    File.Delete(outputPath);
+                }
+
+                return new CompressionResult
+                {
+                    CompressedFilePath = null,
+                    OriginalFileSize = originalSize,
+                    CompressedFileSize = 0,
+                    CompressionRatio = 0,
+                    CompressionTime = sw.Elapsed,
+                    AlgorithmName = CompressionAlgorithms.PredictiveDifferentialCoding,
+                    UsedSettings = settings,
+                    TotalSamples = samples.Length,
+                    StatusMessage = "Compression cancelled by user."
+                };
             }
 
             sw.Stop();
@@ -461,7 +554,7 @@ namespace CompressAudioFiles.Services
                 StatusMessage = "Predictive Differential Coding compression completed successfully."
             };
         }
-        public CompressionResult CompressUsingDeltaModulation(string inputPath, CompressionSettings settings)
+        public CompressionResult CompressUsingDeltaModulation(string inputPath, CompressionSettings settings, CancellationToken cancellationToken)
         {
             Stopwatch sw = Stopwatch.StartNew();
 
@@ -486,14 +579,15 @@ namespace CompressAudioFiles.Services
                 step = 1000;
 
             int bitsCount = 0;
+            bool wasCancelled = false;
 
             using (BinaryWriter writer = new BinaryWriter(File.Open(outputPath, FileMode.Create)))
             {
-                writer.Write(samples[0]);      // First sample
-                writer.Write(step);            // Delta step
+                writer.Write(samples[0]);
+                writer.Write(step);
 
                 long bitsCountPosition = writer.BaseStream.Position;
-                writer.Write(0);               // Placeholder for number of bits
+                writer.Write(0);
 
                 short predicted = samples[0];
 
@@ -502,6 +596,12 @@ namespace CompressAudioFiles.Services
 
                 for (int i = 1; i < samples.Length; i++)
                 {
+                    if (IsCancellationRequested(cancellationToken))
+                    {
+                        wasCancelled = true;
+                        break;
+                    }
+
                     bool bit;
 
                     if (samples[i] >= predicted)
@@ -534,8 +634,35 @@ namespace CompressAudioFiles.Services
                     }
                 }
 
-                writer.BaseStream.Seek(bitsCountPosition, SeekOrigin.Begin);
-                writer.Write(bitsCount);
+                if (!wasCancelled)
+                {
+                    writer.BaseStream.Seek(bitsCountPosition, SeekOrigin.Begin);
+                    writer.Write(bitsCount);
+                }
+            }
+
+            if (wasCancelled)
+            {
+                sw.Stop();
+
+                if (File.Exists(outputPath))
+                {
+                    File.Delete(outputPath);
+                }
+
+                return new CompressionResult
+                {
+                    CompressedFilePath = null,
+                    OriginalFileSize = originalSize,
+                    CompressedFileSize = 0,
+                    CompressionRatio = 0,
+                    CompressionTime = sw.Elapsed,
+                    AlgorithmName = CompressionAlgorithms.DeltaModulation,
+                    UsedSettings = settings,
+                    TotalSamples = samples.Length,
+                    TotalBits = bitsCount,
+                    StatusMessage = "Compression cancelled by user."
+                };
             }
 
             sw.Stop();
@@ -558,7 +685,7 @@ namespace CompressAudioFiles.Services
                 StatusMessage = "Compression completed successfully"
             };
         }
-        public CompressionResult CompressUsingAdaptiveDeltaModulation(string inputPath, CompressionSettings settings)
+        public CompressionResult CompressUsingAdaptiveDeltaModulation(string inputPath, CompressionSettings settings, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(inputPath))
                 throw new ArgumentException("Input audio path is empty.");
@@ -577,6 +704,9 @@ namespace CompressAudioFiles.Services
             );
 
             long totalSamplesWritten = 0;
+            long totalSamples = 0;
+
+            bool wasCancelled = false;
 
             const int initialStep = 512;
             const int minStep = 16;
@@ -610,17 +740,24 @@ namespace CompressAudioFiles.Services
                 float[] buffer = new float[4096];
                 int samplesRead;
 
-                long totalSamples = reader.Length / (reader.WaveFormat.BitsPerSample / 8);
+                totalSamples =
+                    reader.Length / (reader.WaveFormat.BitsPerSample / 8);
 
                 TimeSpan reportInterval = TimeSpan.FromMilliseconds(100);
                 TimeSpan lastReportTime = TimeSpan.Zero;
-
 
                 while ((samplesRead = reader.Read(buffer, 0, buffer.Length)) > 0)
                 {
                     for (int i = 0; i < samplesRead; i++)
                     {
-                        short currentSample = AudioCodecHelper.FloatToPcm16(buffer[i]);
+                        if (IsCancellationRequested(cancellationToken))
+                        {
+                            wasCancelled = true;
+                            break;
+                        }
+
+                        short currentSample =
+                            AudioCodecHelper.FloatToPcm16(buffer[i]);
 
                         int bit;
 
@@ -650,9 +787,18 @@ namespace CompressAudioFiles.Services
                             stepSize = (int)(stepSize * decreaseFactor);
                         }
 
-                        stepSize = AudioCodecHelper.Clamp(stepSize, minStep, maxStep);
+                        stepSize = AudioCodecHelper.Clamp(
+                            stepSize,
+                            minStep,
+                            maxStep
+                        );
 
-                        AudioCodecHelper.PackBit(ref currentByte, ref bitPosition, bit, writer);
+                        AudioCodecHelper.PackBit(
+                            ref currentByte,
+                            ref bitPosition,
+                            bit,
+                            writer
+                        );
 
                         previousBit = bit;
                         totalSamplesWritten++;
@@ -672,25 +818,54 @@ namespace CompressAudioFiles.Services
                             );
                         }
                     }
+
+                    if (wasCancelled)
+                        break;
                 }
 
-                if (bitPosition > 0)
+                if (!wasCancelled)
                 {
-                    writer.Write(currentByte);
+                    if (bitPosition > 0)
+                    {
+                        writer.Write(currentByte);
+                    }
+
+                    ReportProgress(
+                        CompressionAlgorithms.AdaptiveDeltaModulation,
+                        "Compression",
+                        totalSamplesWritten,
+                        totalSamples,
+                        originalSize,
+                        writer.BaseStream.Position,
+                        stopwatch
+                    );
+
+                    writer.BaseStream.Seek(totalSamplesPosition, SeekOrigin.Begin);
+                    writer.Write(totalSamplesWritten);
+                }
+            }
+
+            if (wasCancelled)
+            {
+                stopwatch.Stop();
+
+                if (File.Exists(outputPath))
+                {
+                    File.Delete(outputPath);
                 }
 
-                ReportProgress(
-                    CompressionAlgorithms.AdaptiveDeltaModulation,
-                    "Compression",
-                    totalSamplesWritten,
-                    totalSamples,
-                    originalSize,
-                    writer.BaseStream.Position,
-                    stopwatch
-                );
-
-                writer.BaseStream.Seek(totalSamplesPosition, SeekOrigin.Begin);
-                writer.Write(totalSamplesWritten);
+                return new CompressionResult
+                {
+                    CompressedFilePath = null,
+                    OriginalFileSize = originalSize,
+                    CompressedFileSize = 0,
+                    CompressionRatio = 0,
+                    CompressionTime = stopwatch.Elapsed,
+                    AlgorithmName = CompressionAlgorithms.AdaptiveDeltaModulation,
+                    UsedSettings = settings,
+                    TotalSamples = (int)totalSamplesWritten,
+                    StatusMessage = "Compression cancelled by user."
+                };
             }
 
             stopwatch.Stop();
@@ -707,7 +882,9 @@ namespace CompressAudioFiles.Services
                     : (double)originalSize / compressedSize,
                 CompressionTime = stopwatch.Elapsed,
                 AlgorithmName = CompressionAlgorithms.AdaptiveDeltaModulation,
-                UsedSettings = settings
+                UsedSettings = settings,
+                TotalSamples = (int)totalSamplesWritten,
+                StatusMessage = "Adaptive Delta Modulation compression completed successfully."
             };
         }
     }

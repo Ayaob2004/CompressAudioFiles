@@ -7,6 +7,7 @@ using CompressAudioFiles.Services;
 using NAudio.Wave;
 using System.Windows.Forms.DataVisualization.Charting;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace CompressAudioFiles
 {
@@ -25,6 +26,7 @@ namespace CompressAudioFiles
         private readonly CompressionMonitoringService monitoringService;
         private readonly AudioPlayerService player;
         private Panel _progressFill;
+        private CancellationTokenSource compressionCancellationSource;
 
         public MainForm()
         {
@@ -74,7 +76,6 @@ namespace CompressAudioFiles
             chartCompressionRatio.Titles.Clear();
             chartCompressionRatio.Titles.Add("Compression Ratio During Execution");
 
-
             chartProcessingSpeed.Series.Clear();
             chartProcessingSpeed.ChartAreas.Clear();
 
@@ -92,9 +93,6 @@ namespace CompressAudioFiles
 
         private void MonitoringService_MonitoringUpdated(object sender, OperationProgressEventArgs e)
         {
-            Console.WriteLine(
-                   $"Ratio = {e.CompressionRatio:F2}"
-            );
             if (InvokeRequired)
             {
                 Invoke(new Action(() => MonitoringService_MonitoringUpdated(sender, e)));
@@ -259,11 +257,19 @@ namespace CompressAudioFiles
                     lblConvertedPath.Text = "Input is already WAV.";
                 }
 
+                compressionCancellationSource = new CancellationTokenSource();
+
                 lastCompressionResult = await Task.Run(() =>
                 {
-                    return audioCompressionService.CompressAudio(pathForCompression, currentCompressionSettings);
+                    return audioCompressionService.CompressAudio(pathForCompression, currentCompressionSettings, compressionCancellationSource.Token);
 
                 });
+
+                if (lastCompressionResult.StatusMessage == "Compression cancelled by user.")
+                {
+                    MessageBox.Show("Compression cancelled safely.");
+                    return;
+                }
 
                 DisplayCompressionResult(lastCompressionResult);
 
@@ -597,6 +603,11 @@ namespace CompressAudioFiles
 
                 return outputPath;
             }
+        }
+
+        private void btnStopCompression_Click(object sender, EventArgs e)
+        {
+            compressionCancellationSource.Cancel();
         }
     }
 }

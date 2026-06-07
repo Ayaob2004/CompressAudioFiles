@@ -96,25 +96,21 @@ namespace CompressAudioFiles.Services
                 WaveFormat format = new WaveFormat(
                     header.SampleRate,
                     16,
-                    header.Channels
+                    1
                 );
 
                 using (WaveFileWriter writer = new WaveFileWriter(outputPath, format))
                 {
                     int previousSample = header.FirstSample;
 
-                    AudioCodecHelper.WritePcm16Sample(
-                        writer,
-                        header.FirstSample
-                    );
+                    AudioCodecHelper.WritePcm16Sample(writer, (short)previousSample);
 
                     for (long i = 1; i < header.TotalSamples; i++)
                     {
                         sbyte quantizedError = reader.ReadSByte();
 
                         int reconstructed =
-                            previousSample +
-                            (quantizedError * header.QuantizationStep);
+                            previousSample + (quantizedError * header.QuantizationStep);
 
                         reconstructed = AudioCodecHelper.Clamp(
                             reconstructed,
@@ -122,10 +118,7 @@ namespace CompressAudioFiles.Services
                             short.MaxValue
                         );
 
-                        AudioCodecHelper.WritePcm16Sample(
-                            writer,
-                            (short)reconstructed
-                        );
+                        AudioCodecHelper.WritePcm16Sample(writer, (short)reconstructed);
 
                         previousSample = reconstructed;
                     }
