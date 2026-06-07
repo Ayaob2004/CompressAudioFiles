@@ -20,7 +20,7 @@ namespace CompressAudioFiles.Models
 
         public CompressionSettings()
         {
-            AlgorithmName = CompressionAlgorithms.AdaptiveDeltaModulation;
+            AlgorithmName = null;
             SampleRate = 44100;
             QuantizationLevels = 2;
             BitRate = 1;

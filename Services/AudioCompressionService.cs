@@ -72,8 +72,6 @@ namespace CompressAudioFiles.Services
             if (string.IsNullOrWhiteSpace(settings.AlgorithmName))
                 throw new ArgumentException("Algorithm name is required.");
 
-            cancellationToken.ThrowIfCancellationRequested();
-
             switch (settings.AlgorithmName)
             {
                 case CompressionAlgorithms.AdaptiveDeltaModulation:

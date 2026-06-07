@@ -76,6 +76,7 @@ namespace CompressAudioFiles
             this.cmbQuantizationLevels = new System.Windows.Forms.ComboBox();
             this.cmbSampleRate = new System.Windows.Forms.ComboBox();
             this.btnStopCompression = new System.Windows.Forms.Button();
+            this.btnReset = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.chartCompressionRatio)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.chartProcessingSpeed)).BeginInit();
             this.grpCompressionSettings.SuspendLayout();
@@ -89,7 +90,7 @@ namespace CompressAudioFiles
             this.btnChooseAudio.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(4)))), ((int)(((byte)(4)))), ((int)(((byte)(4)))), ((int)(((byte)(4)))));
             this.btnChooseAudio.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnChooseAudio.ForeColor = System.Drawing.Color.White;
-            this.btnChooseAudio.Location = new System.Drawing.Point(39, 9);
+            this.btnChooseAudio.Location = new System.Drawing.Point(8, 8);
             this.btnChooseAudio.Margin = new System.Windows.Forms.Padding(4, 2, 4, 2);
             this.btnChooseAudio.Name = "btnChooseAudio";
             this.btnChooseAudio.Size = new System.Drawing.Size(131, 49);
@@ -102,7 +103,7 @@ namespace CompressAudioFiles
             // 
             this.lblFilePath.AutoSize = true;
             this.lblFilePath.ForeColor = System.Drawing.Color.White;
-            this.lblFilePath.Location = new System.Drawing.Point(36, 65);
+            this.lblFilePath.Location = new System.Drawing.Point(5, 64);
             this.lblFilePath.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblFilePath.Name = "lblFilePath";
             this.lblFilePath.Size = new System.Drawing.Size(59, 17);
@@ -114,7 +115,7 @@ namespace CompressAudioFiles
             // 
             this.lblFileSize.AutoSize = true;
             this.lblFileSize.ForeColor = System.Drawing.Color.White;
-            this.lblFileSize.Location = new System.Drawing.Point(40, 97);
+            this.lblFileSize.Location = new System.Drawing.Point(5, 105);
             this.lblFileSize.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblFileSize.Name = "lblFileSize";
             this.lblFileSize.Size = new System.Drawing.Size(57, 17);
@@ -125,7 +126,7 @@ namespace CompressAudioFiles
             // 
             this.lblDuration.AutoSize = true;
             this.lblDuration.ForeColor = System.Drawing.Color.White;
-            this.lblDuration.Location = new System.Drawing.Point(36, 134);
+            this.lblDuration.Location = new System.Drawing.Point(5, 142);
             this.lblDuration.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblDuration.Name = "lblDuration";
             this.lblDuration.Size = new System.Drawing.Size(62, 17);
@@ -136,7 +137,7 @@ namespace CompressAudioFiles
             // 
             this.lblSampleRate.AutoSize = true;
             this.lblSampleRate.ForeColor = System.Drawing.Color.White;
-            this.lblSampleRate.Location = new System.Drawing.Point(36, 169);
+            this.lblSampleRate.Location = new System.Drawing.Point(5, 177);
             this.lblSampleRate.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblSampleRate.Name = "lblSampleRate";
             this.lblSampleRate.Size = new System.Drawing.Size(85, 17);
@@ -147,7 +148,7 @@ namespace CompressAudioFiles
             // 
             this.lblChannels.AutoSize = true;
             this.lblChannels.ForeColor = System.Drawing.Color.White;
-            this.lblChannels.Location = new System.Drawing.Point(40, 206);
+            this.lblChannels.Location = new System.Drawing.Point(5, 214);
             this.lblChannels.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblChannels.Name = "lblChannels";
             this.lblChannels.Size = new System.Drawing.Size(67, 17);
@@ -158,7 +159,7 @@ namespace CompressAudioFiles
             // 
             this.lblBitRate.AutoSize = true;
             this.lblBitRate.ForeColor = System.Drawing.Color.White;
-            this.lblBitRate.Location = new System.Drawing.Point(40, 245);
+            this.lblBitRate.Location = new System.Drawing.Point(5, 253);
             this.lblBitRate.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblBitRate.Name = "lblBitRate";
             this.lblBitRate.Size = new System.Drawing.Size(54, 17);
@@ -169,7 +170,7 @@ namespace CompressAudioFiles
             // 
             this.lblEncodingType.AutoSize = true;
             this.lblEncodingType.ForeColor = System.Drawing.Color.White;
-            this.lblEncodingType.Location = new System.Drawing.Point(36, 294);
+            this.lblEncodingType.Location = new System.Drawing.Point(5, 290);
             this.lblEncodingType.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblEncodingType.Name = "lblEncodingType";
             this.lblEncodingType.Size = new System.Drawing.Size(99, 17);
@@ -182,7 +183,7 @@ namespace CompressAudioFiles
             this.cmbCompressionAlgorithm.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.cmbCompressionAlgorithm.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(204)))), ((int)(((byte)(204)))), ((int)(((byte)(204)))));
             this.cmbCompressionAlgorithm.FormattingEnabled = true;
-            this.cmbCompressionAlgorithm.Location = new System.Drawing.Point(590, 21);
+            this.cmbCompressionAlgorithm.Location = new System.Drawing.Point(847, 22);
             this.cmbCompressionAlgorithm.Margin = new System.Windows.Forms.Padding(4, 2, 4, 2);
             this.cmbCompressionAlgorithm.Name = "cmbCompressionAlgorithm";
             this.cmbCompressionAlgorithm.Size = new System.Drawing.Size(223, 24);
@@ -194,10 +195,10 @@ namespace CompressAudioFiles
             this.btnCompress.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(24)))), ((int)(((byte)(95)))), ((int)(((byte)(165)))));
             this.btnCompress.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnCompress.ForeColor = System.Drawing.Color.White;
-            this.btnCompress.Location = new System.Drawing.Point(821, 14);
+            this.btnCompress.Location = new System.Drawing.Point(547, 9);
             this.btnCompress.Margin = new System.Windows.Forms.Padding(4, 2, 4, 2);
             this.btnCompress.Name = "btnCompress";
-            this.btnCompress.Size = new System.Drawing.Size(125, 44);
+            this.btnCompress.Size = new System.Drawing.Size(125, 49);
             this.btnCompress.TabIndex = 9;
             this.btnCompress.Text = "Compress";
             this.btnCompress.UseVisualStyleBackColor = false;
@@ -207,7 +208,7 @@ namespace CompressAudioFiles
             // 
             this.lblCompressedPath.AutoSize = true;
             this.lblCompressedPath.ForeColor = System.Drawing.Color.White;
-            this.lblCompressedPath.Location = new System.Drawing.Point(587, 63);
+            this.lblCompressedPath.Location = new System.Drawing.Point(844, 64);
             this.lblCompressedPath.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblCompressedPath.Name = "lblCompressedPath";
             this.lblCompressedPath.Size = new System.Drawing.Size(116, 17);
@@ -218,7 +219,7 @@ namespace CompressAudioFiles
             // 
             this.lblOriginalSize.AutoSize = true;
             this.lblOriginalSize.ForeColor = System.Drawing.Color.White;
-            this.lblOriginalSize.Location = new System.Drawing.Point(587, 104);
+            this.lblOriginalSize.Location = new System.Drawing.Point(844, 105);
             this.lblOriginalSize.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblOriginalSize.Name = "lblOriginalSize";
             this.lblOriginalSize.Size = new System.Drawing.Size(84, 17);
@@ -229,7 +230,7 @@ namespace CompressAudioFiles
             // 
             this.lblCompressedSize.AutoSize = true;
             this.lblCompressedSize.ForeColor = System.Drawing.Color.White;
-            this.lblCompressedSize.Location = new System.Drawing.Point(587, 141);
+            this.lblCompressedSize.Location = new System.Drawing.Point(844, 142);
             this.lblCompressedSize.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblCompressedSize.Name = "lblCompressedSize";
             this.lblCompressedSize.Size = new System.Drawing.Size(114, 17);
@@ -240,7 +241,7 @@ namespace CompressAudioFiles
             // 
             this.lblCompressionRatio.AutoSize = true;
             this.lblCompressionRatio.ForeColor = System.Drawing.Color.White;
-            this.lblCompressionRatio.Location = new System.Drawing.Point(587, 176);
+            this.lblCompressionRatio.Location = new System.Drawing.Point(844, 177);
             this.lblCompressionRatio.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblCompressionRatio.Name = "lblCompressionRatio";
             this.lblCompressionRatio.Size = new System.Drawing.Size(123, 17);
@@ -251,7 +252,7 @@ namespace CompressAudioFiles
             // 
             this.lblCompressionTime.AutoSize = true;
             this.lblCompressionTime.ForeColor = System.Drawing.Color.White;
-            this.lblCompressionTime.Location = new System.Drawing.Point(587, 213);
+            this.lblCompressionTime.Location = new System.Drawing.Point(844, 214);
             this.lblCompressionTime.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblCompressionTime.Name = "lblCompressionTime";
             this.lblCompressionTime.Size = new System.Drawing.Size(121, 17);
@@ -263,7 +264,7 @@ namespace CompressAudioFiles
             this.lblAlgorithm.AutoSize = true;
             this.lblAlgorithm.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(26)))), ((int)(((byte)(26)))), ((int)(((byte)(66)))));
             this.lblAlgorithm.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(204)))), ((int)(((byte)(204)))), ((int)(((byte)(204)))));
-            this.lblAlgorithm.Location = new System.Drawing.Point(511, 24);
+            this.lblAlgorithm.Location = new System.Drawing.Point(1078, 25);
             this.lblAlgorithm.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblAlgorithm.Name = "lblAlgorithm";
             this.lblAlgorithm.Size = new System.Drawing.Size(67, 17);
@@ -336,7 +337,7 @@ namespace CompressAudioFiles
             // 
             this.lblDecompressedPath.AutoSize = true;
             this.lblDecompressedPath.ForeColor = System.Drawing.Color.White;
-            this.lblDecompressedPath.Location = new System.Drawing.Point(587, 289);
+            this.lblDecompressedPath.Location = new System.Drawing.Point(844, 290);
             this.lblDecompressedPath.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblDecompressedPath.Name = "lblDecompressedPath";
             this.lblDecompressedPath.Size = new System.Drawing.Size(132, 17);
@@ -349,10 +350,10 @@ namespace CompressAudioFiles
             this.btnDecompress.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(24)))), ((int)(((byte)(95)))), ((int)(((byte)(165)))));
             this.btnDecompress.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnDecompress.ForeColor = System.Drawing.Color.White;
-            this.btnDecompress.Location = new System.Drawing.Point(1096, 14);
+            this.btnDecompress.Location = new System.Drawing.Point(413, 8);
             this.btnDecompress.Margin = new System.Windows.Forms.Padding(4);
             this.btnDecompress.Name = "btnDecompress";
-            this.btnDecompress.Size = new System.Drawing.Size(126, 44);
+            this.btnDecompress.Size = new System.Drawing.Size(126, 50);
             this.btnDecompress.TabIndex = 12;
             this.btnDecompress.Text = "Decompress";
             this.btnDecompress.UseVisualStyleBackColor = false;
@@ -362,7 +363,7 @@ namespace CompressAudioFiles
             // 
             this.lblConvertedPath.AutoSize = true;
             this.lblConvertedPath.ForeColor = System.Drawing.Color.White;
-            this.lblConvertedPath.Location = new System.Drawing.Point(590, 252);
+            this.lblConvertedPath.Location = new System.Drawing.Point(847, 253);
             this.lblConvertedPath.Name = "lblConvertedPath";
             this.lblConvertedPath.Size = new System.Drawing.Size(102, 17);
             this.lblConvertedPath.TabIndex = 19;
@@ -370,7 +371,7 @@ namespace CompressAudioFiles
             // 
             // progressBarCompression
             // 
-            this.progressBarCompression.Location = new System.Drawing.Point(1229, 25);
+            this.progressBarCompression.Location = new System.Drawing.Point(679, 22);
             this.progressBarCompression.Name = "progressBarCompression";
             this.progressBarCompression.Size = new System.Drawing.Size(125, 23);
             this.progressBarCompression.TabIndex = 20;
@@ -381,13 +382,13 @@ namespace CompressAudioFiles
             this.chartCompressionRatio.ChartAreas.Add(chartArea1);
             legend1.Name = "Legend1";
             this.chartCompressionRatio.Legends.Add(legend1);
-            this.chartCompressionRatio.Location = new System.Drawing.Point(735, 330);
+            this.chartCompressionRatio.Location = new System.Drawing.Point(473, 357);
             this.chartCompressionRatio.Name = "chartCompressionRatio";
             series1.ChartArea = "ChartArea1";
             series1.Legend = "Legend1";
             series1.Name = "Series1";
             this.chartCompressionRatio.Series.Add(series1);
-            this.chartCompressionRatio.Size = new System.Drawing.Size(378, 300);
+            this.chartCompressionRatio.Size = new System.Drawing.Size(459, 230);
             this.chartCompressionRatio.TabIndex = 21;
             this.chartCompressionRatio.Text = "chart1";
             // 
@@ -397,13 +398,13 @@ namespace CompressAudioFiles
             this.chartProcessingSpeed.ChartAreas.Add(chartArea2);
             legend2.Name = "Legend1";
             this.chartProcessingSpeed.Legends.Add(legend2);
-            this.chartProcessingSpeed.Location = new System.Drawing.Point(1119, 330);
+            this.chartProcessingSpeed.Location = new System.Drawing.Point(938, 357);
             this.chartProcessingSpeed.Name = "chartProcessingSpeed";
             series2.ChartArea = "ChartArea1";
             series2.Legend = "Legend1";
             series2.Name = "Series1";
             this.chartProcessingSpeed.Series.Add(series2);
-            this.chartProcessingSpeed.Size = new System.Drawing.Size(378, 300);
+            this.chartProcessingSpeed.Size = new System.Drawing.Size(459, 230);
             this.chartProcessingSpeed.TabIndex = 22;
             this.chartProcessingSpeed.Text = "chart2";
             // 
@@ -411,7 +412,7 @@ namespace CompressAudioFiles
             // 
             this.lblChartCompressionRatio.AutoSize = true;
             this.lblChartCompressionRatio.ForeColor = System.Drawing.Color.White;
-            this.lblChartCompressionRatio.Location = new System.Drawing.Point(915, 650);
+            this.lblChartCompressionRatio.Location = new System.Drawing.Point(685, 613);
             this.lblChartCompressionRatio.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblChartCompressionRatio.Name = "lblChartCompressionRatio";
             this.lblChartCompressionRatio.Size = new System.Drawing.Size(13, 17);
@@ -422,7 +423,7 @@ namespace CompressAudioFiles
             // 
             this.lblChartProcessingSpeed.AutoSize = true;
             this.lblChartProcessingSpeed.ForeColor = System.Drawing.Color.White;
-            this.lblChartProcessingSpeed.Location = new System.Drawing.Point(1307, 650);
+            this.lblChartProcessingSpeed.Location = new System.Drawing.Point(1166, 613);
             this.lblChartProcessingSpeed.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblChartProcessingSpeed.Name = "lblChartProcessingSpeed";
             this.lblChartProcessingSpeed.Size = new System.Drawing.Size(13, 17);
@@ -433,7 +434,7 @@ namespace CompressAudioFiles
             // 
             this.lblProgress.AutoSize = true;
             this.lblProgress.ForeColor = System.Drawing.Color.White;
-            this.lblProgress.Location = new System.Drawing.Point(1361, 28);
+            this.lblProgress.Location = new System.Drawing.Point(811, 25);
             this.lblProgress.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblProgress.Name = "lblProgress";
             this.lblProgress.Size = new System.Drawing.Size(28, 17);
@@ -451,7 +452,7 @@ namespace CompressAudioFiles
             this.grpCompressionSettings.Controls.Add(this.cmbQuantizationLevels);
             this.grpCompressionSettings.Controls.Add(this.cmbSampleRate);
             this.grpCompressionSettings.ForeColor = System.Drawing.Color.White;
-            this.grpCompressionSettings.Location = new System.Drawing.Point(39, 351);
+            this.grpCompressionSettings.Location = new System.Drawing.Point(8, 351);
             this.grpCompressionSettings.Name = "grpCompressionSettings";
             this.grpCompressionSettings.Size = new System.Drawing.Size(459, 236);
             this.grpCompressionSettings.TabIndex = 26;
@@ -530,14 +531,29 @@ namespace CompressAudioFiles
             this.btnStopCompression.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(24)))), ((int)(((byte)(95)))), ((int)(((byte)(165)))));
             this.btnStopCompression.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnStopCompression.ForeColor = System.Drawing.Color.White;
-            this.btnStopCompression.Location = new System.Drawing.Point(954, 14);
+            this.btnStopCompression.Location = new System.Drawing.Point(280, 8);
             this.btnStopCompression.Margin = new System.Windows.Forms.Padding(4, 2, 4, 2);
             this.btnStopCompression.Name = "btnStopCompression";
-            this.btnStopCompression.Size = new System.Drawing.Size(125, 44);
+            this.btnStopCompression.Size = new System.Drawing.Size(125, 50);
             this.btnStopCompression.TabIndex = 27;
             this.btnStopCompression.Text = "Stop";
             this.btnStopCompression.UseVisualStyleBackColor = false;
             this.btnStopCompression.Click += new System.EventHandler(this.btnStopCompression_Click);
+            // 
+            // btnReset
+            // 
+            this.btnReset.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(24)))), ((int)(((byte)(95)))), ((int)(((byte)(165)))));
+            this.btnReset.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(24)))), ((int)(((byte)(95)))), ((int)(((byte)(165)))));
+            this.btnReset.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnReset.ForeColor = System.Drawing.Color.White;
+            this.btnReset.Location = new System.Drawing.Point(147, 8);
+            this.btnReset.Margin = new System.Windows.Forms.Padding(4, 2, 4, 2);
+            this.btnReset.Name = "btnReset";
+            this.btnReset.Size = new System.Drawing.Size(125, 49);
+            this.btnReset.TabIndex = 28;
+            this.btnReset.Text = "Reset";
+            this.btnReset.UseVisualStyleBackColor = false;
+            this.btnReset.Click += new System.EventHandler(this.btnReset_Click);
             // 
             // MainForm
             // 
@@ -546,6 +562,7 @@ namespace CompressAudioFiles
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(26)))), ((int)(((byte)(26)))), ((int)(((byte)(46)))));
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.ClientSize = new System.Drawing.Size(1827, 922);
+            this.Controls.Add(this.btnReset);
             this.Controls.Add(this.btnStopCompression);
             this.Controls.Add(this.grpCompressionSettings);
             this.Controls.Add(this.lblProgress);
@@ -635,6 +652,7 @@ namespace CompressAudioFiles
         private System.Windows.Forms.NumericUpDown nudDeltaStep;
         private System.Windows.Forms.ComboBox cmbQuantizationLevels;
         private System.Windows.Forms.Button btnStopCompression;
+        private System.Windows.Forms.Button btnReset;
     }
 }
 

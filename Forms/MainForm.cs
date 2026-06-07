@@ -609,5 +609,48 @@ namespace CompressAudioFiles
         {
             compressionCancellationSource.Cancel();
         }
+
+        private void btnReset_Click(object sender, EventArgs e)
+        {
+            ResetCompressionWorkspace();
+        }
+
+        private void ResetCompressionWorkspace()
+        {
+            compressionCancellationSource?.Cancel();
+
+            progressBarCompression.Value = 0;
+            lblProgress.Text = "0%";
+
+            lblCompressedPath.Text = "CompressedPath";
+            lblOriginalSize.Text = "OriginalSize";
+            lblCompressedSize.Text = "CompressedSize";
+            lblCompressionRatio.Text = "CompressionRatio";
+            lblCompressionTime.Text = "CompressionTime";
+            lblConvertedPath.Text = "ConvertedPath";
+            lblDecompressedPath.Text = "DecompressedPath";
+
+            chartCompressionRatio.Series["CompressionRatio"].Points.Clear();
+            chartProcessingSpeed.Series["ProcessingSpeed"].Points.Clear();
+            lblChartCompressionRatio.Text = "-";
+            lblChartProcessingSpeed.Text = "-";
+
+            monitoringService.Reset();
+
+            currentCompressionSettings = new CompressionSettings();
+
+            cmbSampleRate.SelectedItem = currentCompressionSettings.SampleRate;
+            cmbQuantizationLevels.SelectedItem = currentCompressionSettings.QuantizationLevels;
+            nudDeltaStep.Value = currentCompressionSettings.DeltaStep;
+            nudPredictiveQuantizationStep.Value = currentCompressionSettings.PredictiveQuantizationStep;
+            cmbCompressionAlgorithm.SelectedItem = currentCompressionSettings.AlgorithmName;
+
+            decompressedFilePath = null;
+
+            btnCompress.Enabled = true;
+            btnStopCompression.Enabled = false;
+            btnReset.Enabled = true;
+            btnDecompress.Enabled = false;
+        }
     }
 }

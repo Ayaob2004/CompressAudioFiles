@@ -25,7 +25,6 @@ namespace CompressAudioFiles.Services
             {
                 case CompressionAlgorithms.AdaptiveDeltaModulation:
                     return DecompressAdaptiveDeltaModulation(compressedFilePath);
-
                 case CompressionAlgorithms.DeltaModulation:
                     return DecompressDeltaModulation(compressedFilePath);
                 case CompressionAlgorithms.PredictiveDifferentialCoding:
