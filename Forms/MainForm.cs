@@ -12,19 +12,19 @@ namespace CompressAudioFiles
 {
     public partial class MainForm : Form
     {
-        private string currentAudioPath;
         private bool isAudioLoaded;
+        private string currentAudioPath;
+        private string decompressedFilePath;
+        private string FormatTime(TimeSpan t)=> $"{(int)t.TotalMinutes:D2}:{t.Seconds:D2}";
         private AudioMetadata currentAudioMetadata;
         private CompressionSettings currentCompressionSettings;
         private CompressionResult lastCompressionResult;
-        private string decompressedFilePath;
         private readonly AudioMetadataService audioMetadataService;
         private readonly AudioCompressionService audioCompressionService;
-        private AudioPlayerService player;
-        private Panel _progressFill;
-        private string FormatTime(TimeSpan t)=> $"{(int)t.TotalMinutes:D2}:{t.Seconds:D2}";
         private readonly AudioDecompressionService audioDecompressionService;
-        private CompressionMonitoringService monitoringService;
+        private readonly CompressionMonitoringService monitoringService;
+        private readonly AudioPlayerService player;
+        private Panel _progressFill;
 
         public MainForm()
         {
@@ -36,7 +36,6 @@ namespace CompressAudioFiles
             monitoringService = new CompressionMonitoringService();
 
             audioCompressionService.ProgressChanged += monitoringService.HandleProgress;
-            audioDecompressionService.ProgressChanged += monitoringService.HandleProgress;
 
             monitoringService.MonitoringUpdated += MonitoringService_MonitoringUpdated;
             SetupMonitoringCharts();
@@ -93,6 +92,9 @@ namespace CompressAudioFiles
 
         private void MonitoringService_MonitoringUpdated(object sender, OperationProgressEventArgs e)
         {
+            Console.WriteLine(
+                   $"Ratio = {e.CompressionRatio:F2}"
+            );
             if (InvokeRequired)
             {
                 Invoke(new Action(() => MonitoringService_MonitoringUpdated(sender, e)));
@@ -229,19 +231,15 @@ namespace CompressAudioFiles
 
             try
             {
-                monitoringService.Reset();
-
-                progressBarCompression.Value = 0;
-
-                chartCompressionRatio.Series["CompressionRatio"].Points.Clear();
-                chartProcessingSpeed.Series["ProcessingSpeed"].Points.Clear();
-
+                btnCompress.Enabled = false;
+                btnCompress.Text = "Compressing...";
                 lblProgress.Text = "0%";
                 lblChartCompressionRatio.Text = "Ratio: 0";
                 lblChartProcessingSpeed.Text = "Speed: 0 samples/sec";
-
-                btnCompress.Enabled = false;
-                btnCompress.Text = "Compressing...";
+                progressBarCompression.Value = 0;
+                chartCompressionRatio.Series["CompressionRatio"].Points.Clear();
+                chartProcessingSpeed.Series["ProcessingSpeed"].Points.Clear();
+                monitoringService.Reset();
 
                 if (!TryReadCompressionSettingsFromUI())
                     return;
@@ -260,6 +258,7 @@ namespace CompressAudioFiles
                 {
                     lblConvertedPath.Text = "Input is already WAV.";
                 }
+
                 lastCompressionResult = await Task.Run(() =>
                 {
                     return audioCompressionService.CompressAudio(pathForCompression, currentCompressionSettings);
@@ -521,8 +520,9 @@ namespace CompressAudioFiles
             bool isPDC = algorithm == CompressionAlgorithms.PredictiveDifferentialCoding;
             bool isDM = algorithm == CompressionAlgorithms.DeltaModulation;
             bool isNQ = algorithm == CompressionAlgorithms.NonlinearQuantization;
+            bool isDPCM = algorithm == CompressionAlgorithms.DPCM;
 
-            bool showGeneralSettings = isADM || isPDC || isDM || isNQ;
+            bool showGeneralSettings = isADM || isPDC || isDM || isNQ || isDPCM;
 
             lblSampleRate2.Visible = showGeneralSettings;
             cmbSampleRate.Visible = showGeneralSettings;
@@ -533,8 +533,8 @@ namespace CompressAudioFiles
             lblDeltaStep.Visible = isDM;
             nudDeltaStep.Visible = isDM;
 
-            lblPredictiveQuantizationStep.Visible = isPDC;
-            nudPredictiveQuantizationStep.Visible = isPDC;
+            lblPredictiveQuantizationStep.Visible = isPDC || isDPCM;
+            nudPredictiveQuantizationStep.Visible = isPDC || isDPCM;
 
             if (isADM || isDM)
             {

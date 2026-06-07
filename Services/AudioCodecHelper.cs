@@ -1,11 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.IO;
 using NAudio.Wave;
-using CompressAudioFiles.Models;
 
 namespace CompressAudioFiles.Services
 {
@@ -199,6 +195,55 @@ namespace CompressAudioFiles.Services
 
             return header;
         }
+
+        public static void WriteDpcmHeader(
+            BinaryWriter writer,
+            int sampleRate,
+            int channels,
+            int bitsPerSample,
+            int quantizationStep,
+            long totalSamples,
+            short firstSample)
+        {
+            writer.Write("DPCM1");
+            writer.Write(sampleRate);
+            writer.Write(channels);
+            writer.Write(bitsPerSample);
+            writer.Write(quantizationStep);
+            writer.Write(totalSamples);
+            writer.Write(firstSample);
+        }
+
+        public static DpcmHeader ReadDpcmHeader(BinaryReader reader)
+        {
+            string magic = reader.ReadString();
+
+            if (magic != "DPCM1")
+                throw new InvalidDataException("Invalid DPCM compressed file.");
+
+            DpcmHeader header = new DpcmHeader();
+
+            header.SampleRate = reader.ReadInt32();
+            header.Channels = reader.ReadInt32();
+            header.BitsPerSample = reader.ReadInt32();
+            header.QuantizationStep = reader.ReadInt32();
+            header.TotalSamples = reader.ReadInt64();
+            header.FirstSample = reader.ReadInt16();
+
+            if (header.SampleRate <= 0)
+                throw new InvalidDataException("Invalid sample rate in DPCM file.");
+
+            if (header.Channels <= 0)
+                throw new InvalidDataException("Invalid channels count in DPCM file.");
+
+            if (header.QuantizationStep <= 0)
+                throw new InvalidDataException("Invalid quantization step in DPCM file.");
+
+            if (header.TotalSamples <= 0)
+                throw new InvalidDataException("Invalid samples count in DPCM file.");
+
+            return header;
+        }
         ///////////////////////////////////////////////////////////rrr
         public static long WriteNqHeader(BinaryWriter writer,int sampleRate,int channels,int bitsPerSample,int muValue,int levels)
         {
@@ -316,5 +361,15 @@ namespace CompressAudioFiles.Services
         public int MuValue { get; set; }  
         public int Levels { get; set; }  
         public long TotalSamples { get; set; }
+    }
+
+    internal class DpcmHeader
+    {
+        public int SampleRate { get; set; }
+        public int Channels { get; set; }
+        public int BitsPerSample { get; set; }
+        public int QuantizationStep { get; set; }
+        public long TotalSamples { get; set; }
+        public short FirstSample { get; set; }
     }
 }
